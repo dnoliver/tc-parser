@@ -1,1 +1,9 @@
 http://gnuu.org/2009/09/18/writing-your-own-toy-compiler
+http://alumni.cs.ucr.edu/~lgao/teaching/bison.html
+http://www.lysator.liu.se/c/ANSI-C-grammar-l.html
+http://www.lysator.liu.se/c/ANSI-C-grammar-y.html
+http://www.uhu.es/francisco.moreno/gii_pl/docs/Tema_7.pdf
+http://www.capsl.udel.edu/courses/cpeg421/2012/slides/Tutorial-Flex_Bison.pdf
+https://www.gnu.org/software/make/manual/html_node/Automatic-Variables.html
+http://www.oodesign.com/interpreter-pattern.html
+http://www.oodesign.com/builder-pattern.html
