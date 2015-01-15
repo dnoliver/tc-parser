@@ -10,7 +10,7 @@ extern NBlock* programBlock;
 int main(int argc, char **argv)
 {
     yyparse();
-    std::cout << programBlock << std::endl;
+    //std::cout << programBlock << std::endl;
 
     CodeGenContext context;
     context.generateCode(*programBlock);

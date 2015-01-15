@@ -29,7 +29,7 @@ void CodeGenContext::generateCode(NBlock& root)
 	/* Print the bytecode in a human-readable format 
 	   to see if our program compiled properly
 	 */
-	//std::cout << "Code is generated.\n";
+	std::cout << "Code is generated.\n";
 	//PassManager pm;
 	//pm.add(createPrintModulePass(&outs()));
 	//pm.run(*module);
