@@ -1,5 +1,5 @@
-Técnicas de Compilación — Trabajo Final — 2012
-==============================================
+Técnicas de Compilación
+=======================
 
 Maximiliano A. Eschoyez
 
