@@ -1,6 +1,8 @@
 %{
+	#include "node.hpp"
 	#include <stdio.h>
 
+	TranslationUnit *root; /* the top level root node of our final AST */
 	extern char yytext[];
 	extern int column;
 	extern int yylex();
@@ -12,7 +14,28 @@
 	}
 %}
 
-%token IDENTIFIER CONSTANT STRING_LITERAL SIZEOF
+%union {
+	Node *node;
+	TranslationUnit *translation_unit;
+	Statement *statement;
+	Declaration *declaration;
+	DeclarationSpecifierList *declaration_specifiers;
+	StorageClassSpecifier *storage_class_specifier;
+	TypeSpecifier *type_specifier;
+	TypeQualifier *type_qualifier;
+	InitDeclaratorList *init_declarator_list;
+	InitDeclarator *init_declarator;
+	Declarator *declarator;
+	DirectDeclarator *direct_declarator;
+	PointerDeclarator *pointer;
+	PointerDirectDeclarator *pointer_direct_declarator;
+	
+	std::string *string;
+	int token;
+}
+
+%token <string> IDENTIFIER
+%token CONSTANT STRING_LITERAL SIZEOF
 %token PTR_OP INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
 %token AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN
 %token SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN
@@ -24,7 +47,25 @@
 
 %token CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
 
-%start translation_unit
+/* Define the type of node our nonterminal symbols represent.
+   The types refer to the %union declaration above. Ex: when
+   we call an identifier (defined by union type idententifier) we are really
+   calling an (NodeIdentifier*). It makes the compiler happy.
+ */
+%type <translation_unit> program translation_unit
+%type <statement> external_declaration
+%type <declaration> declaration
+%type <declaration_specifiers> declaration_specifiers
+%type <storage_class_specifier> storage_class_specifier
+%type <type_specifier> type_specifier
+%type <type_qualifier> type_qualifier
+%type <init_declarator_list> init_declarator_list
+%type <init_declarator> init_declarator
+%type <declarator> declarator
+%type <direct_declarator> direct_declarator
+%type <pointer> pointer
+
+%start program
 %%
 
 primary_expression
@@ -165,47 +206,47 @@ constant_expression
 	;
 
 declaration
-	: declaration_specifiers ';'
-	| declaration_specifiers init_declarator_list ';'
+	: declaration_specifiers ';' { $$ = new Declaration(*$1); }
+	| declaration_specifiers init_declarator_list ';' { $$ = new Declaration(*$1,*$2); }
 	;
 
 declaration_specifiers
-	: storage_class_specifier
-	| storage_class_specifier declaration_specifiers
-	| type_specifier
-	| type_specifier declaration_specifiers
-	| type_qualifier
-	| type_qualifier declaration_specifiers
+	: storage_class_specifier { $$ = new DeclarationSpecifierList(); $$->push_back($1); }
+	| storage_class_specifier declaration_specifiers { $2->push_back($1); $$ = $2; }
+	| type_specifier { $$ = new DeclarationSpecifierList(); $$->push_back($1); }
+	| type_specifier declaration_specifiers { $2->push_back($1); $$ = $2; }
+	| type_qualifier { $$ = new DeclarationSpecifierList(); $$->push_back($1); }
+	| type_qualifier declaration_specifiers { $2->push_back($1); $$ = $2; }
 	;
 
 init_declarator_list
-	: init_declarator
-	| init_declarator_list ',' init_declarator
+	: init_declarator { $$ = new InitDeclaratorList(); $$->push_back($1); }
+	| init_declarator_list ',' init_declarator { $1->push_back($3), $$ = $1; }
 	;
 
 init_declarator
-	: declarator
+	: declarator { $$ = new InitDeclarator($1); }
 	| declarator '=' initializer
 	;
 
 storage_class_specifier
-	: TYPEDEF
-	| EXTERN
-	| STATIC
-	| AUTO
-	| REGISTER
+	: TYPEDEF { $$ = new StorageClassSpecifier(TYPEDEF, "typedef"); }
+	| EXTERN { $$ = new StorageClassSpecifier(EXTERN, "extern"); }
+	| STATIC { $$ = new StorageClassSpecifier(STATIC, "static"); }
+	| AUTO { $$ = new StorageClassSpecifier(AUTO, "auto"); }
+	| REGISTER { $$ = new StorageClassSpecifier(REGISTER, "register"); }
 	;
 
 type_specifier
-	: VOID
-	| CHAR
-	| SHORT
-	| INT
-	| LONG
-	| FLOAT
-	| DOUBLE
-	| SIGNED
-	| UNSIGNED
+	: VOID { $$ = new TypeSpecifier(VOID, "void"); }
+	| CHAR { $$ = new TypeSpecifier(CHAR, "char"); }
+	| SHORT { $$ = new TypeSpecifier(SHORT, "short"); }
+	| INT { $$ = new TypeSpecifier(INT, "int"); }
+	| LONG { $$ = new TypeSpecifier(LONG, "long"); }
+	| FLOAT { $$ = new TypeSpecifier(FLOAT, "float"); }
+	| DOUBLE { $$ = new TypeSpecifier(DOUBLE, "double"); }
+	| SIGNED { $$ = new TypeSpecifier(SIGNED, "signed"); }
+	| UNSIGNED { $$ = new TypeSpecifier(UNSIGNED, "unsigned"); }
 	| struct_or_union_specifier
 	| enum_specifier
 	| TYPE_NAME
@@ -266,17 +307,17 @@ enumerator
 	;
 
 type_qualifier
-	: CONST
-	| VOLATILE
+	: CONST { $$ = new TypeQualifier(CONST, "const"); }
+	| VOLATILE { $$ = new TypeQualifier(VOLATILE, "volatile"); }
 	;
 
 declarator
-	: pointer direct_declarator
+	: pointer direct_declarator { $$ = new PointerDirectDeclarator($1,$2); }
 	| direct_declarator
 	;
 
 direct_declarator
-	: IDENTIFIER
+	: IDENTIFIER { $$ = new DirectDeclarator(*$1); delete $1; }
 	| '(' declarator ')'
 	| direct_declarator '[' constant_expression ']'
 	| direct_declarator '[' ']'
@@ -286,9 +327,9 @@ direct_declarator
 	;
 
 pointer
-	: '*'
+	: '*' { $$ = new PointerDeclarator(); }
 	| '*' type_qualifier_list
-	| '*' pointer
+	| '*' pointer { $$ = new PointerDeclarator($2); }
 	| '*' type_qualifier_list pointer
 	;
 
@@ -411,9 +452,12 @@ jump_statement
 	| RETURN expression ';'
 	;
 
+program: translation_unit { root = $1; }
+	;
+
 translation_unit
-	: external_declaration
-	| translation_unit external_declaration
+	: external_declaration { $$ = new TranslationUnit(); $$->statements.push_back($<statement>1); }
+	| translation_unit external_declaration { $1->statements.push_back($<statement>2); }
 	;
 
 external_declaration

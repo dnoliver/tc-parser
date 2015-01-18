@@ -7,7 +7,10 @@ IS			(u|U|l|L)*
 
 %{
 #include <stdio.h>
+#include "node.hpp"
 #include "ansi-c.tab.hpp"
+
+#define SAVE_TOKEN yylval.string = new std::string(yytext, yyleng)
 
 void count();
 void comment();
@@ -50,7 +53,7 @@ int check_type();
 "volatile"		{ count(); return(VOLATILE); }
 "while"			{ count(); return(WHILE); }
 
-{L}({L}|{D})*		{ count(); return(check_type()); }
+{L}({L}|{D})*		{ count(); SAVE_TOKEN; return(check_type()); }
 
 0[xX]{H}+{IS}?		{ count(); return(CONSTANT); }
 0{D}+{IS}?		{ count(); return(CONSTANT); }
