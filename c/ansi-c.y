@@ -29,6 +29,9 @@
 	DirectDeclarator *direct_declarator;
 	PointerDeclarator *pointer;
 	PointerDirectDeclarator *pointer_direct_declarator;
+	FunctionDefinition *function_definition;
+	DeclarationList *declaration_list;
+	CompoundStatement *compound_statement;
 	
 	std::string *string;
 	int token;
@@ -64,6 +67,8 @@
 %type <declarator> declarator
 %type <direct_declarator> direct_declarator
 %type <pointer> pointer
+%type <function_definition> function_definition
+%type <compound_statement> compound_statement
 
 %start program
 %%
@@ -323,7 +328,7 @@ direct_declarator
 	| direct_declarator '[' ']'
 	| direct_declarator '(' parameter_type_list ')'
 	| direct_declarator '(' identifier_list ')'
-	| direct_declarator '(' ')'
+	| direct_declarator '(' ')' { $$ = $1; }
 	;
 
 pointer
@@ -410,10 +415,10 @@ labeled_statement
 	;
 
 compound_statement
-	: '{' '}'
-	| '{' statement_list '}'
-	| '{' declaration_list '}'
-	| '{' declaration_list statement_list '}'
+	: '{' '}' { $$ = new CompoundStatement(); }
+	| '{' statement_list '}' { $$ = new CompoundStatement(); }
+	| '{' declaration_list '}' { $$ = new CompoundStatement(); }
+	| '{' declaration_list statement_list '}' { $$ = new CompoundStatement(); }
 	;
 
 declaration_list
@@ -466,10 +471,10 @@ external_declaration
 	;
 
 function_definition
-	: declaration_specifiers declarator declaration_list compound_statement
-	| declaration_specifiers declarator compound_statement
-	| declarator declaration_list compound_statement
-	| declarator compound_statement
+	: declaration_specifiers declarator declaration_list compound_statement { $$ = new FunctionDefinition(); }
+	| declaration_specifiers declarator compound_statement { $$ = new FunctionDefinition(*$1,$2,$3); }
+	| declarator declaration_list compound_statement { $$ = new FunctionDefinition(); }
+	| declarator compound_statement { $$ = new FunctionDefinition($1,$2); }
 	;
 
 %%

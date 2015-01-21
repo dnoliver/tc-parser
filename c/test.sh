@@ -21,6 +21,9 @@ assert "int x; int i;"
 assert "int *x;"
 assert "int ***x;"
 
+# function definition
+assert "int f(){}"
+
 echo
 echo "Ok"
 exit 0

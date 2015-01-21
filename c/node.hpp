@@ -118,3 +118,50 @@ class Declaration : public Statement {
 		virtual std::string toStdString();
 };
 
+typedef std::vector<Declaration*> DeclarationList;
+
+class LabeledStatement : public Statement {
+	public:
+		virtual std::string toStdString();
+};
+
+class CompoundStatement : public Statement {
+	public:
+		virtual std::string toStdString();
+};
+
+class ExpressionStatement : public Statement {
+	public:
+		virtual std::string toStdString();
+};
+
+class SelectionStatement : public Statement {
+	public:
+		virtual std::string toStdString();
+};
+
+class IterationStatement : public Statement {
+	public:
+		virtual std::string toStdString();
+};
+
+class JumpStatement : public Statement {
+	public:
+		virtual std::string toStdString();
+};
+
+class FunctionDefinition : public Statement {
+	public:
+		DeclarationSpecifierList declaration_specifier_list;
+		Declarator *declarator;
+		DeclarationList declaration_list;
+		CompoundStatement *compound_statement;
+	
+		FunctionDefinition() {}
+		FunctionDefinition(Declarator *declarator, CompoundStatement *compound_statement) :
+			declarator(declarator), compound_statement(compound_statement) {}
+		FunctionDefinition(DeclarationSpecifierList declaration_specifier_list, Declarator *declarator, CompoundStatement *compound_statement) :
+			declaration_specifier_list(declaration_specifier_list), declarator(declarator), compound_statement(compound_statement) {}
+		
+		virtual std::string toStdString();
+};
