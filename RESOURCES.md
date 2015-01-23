@@ -30,6 +30,3 @@ http://farside.ph.utexas.edu/teaching/329/lectures/node11.html
 
 # Online XML Formatter
 http://www.freeformatter.com/xml-formatter.html
-
-# Reverse Engineer
-https://www.youtube.com/watch?v=q4VmuRAHJUY
