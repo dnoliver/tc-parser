@@ -18,7 +18,10 @@
 	Node *node;
 	TranslationUnit *translation_unit;
 	Statement *statement;
+	StatementList *statement_list;
 	Declaration *declaration;
+	ParameterDeclaration *parameter_declaration;
+	ParameterDeclarationList *parameter_list;
 	DeclarationSpecifierList *declaration_specifiers;
 	StorageClassSpecifier *storage_class_specifier;
 	TypeSpecifier *type_specifier;
@@ -26,14 +29,21 @@
 	InitDeclaratorList *init_declarator_list;
 	InitDeclarator *init_declarator;
 	Declarator *declarator;
+	
+	
+	ConstantExpression *constant_expression;
+	
 	DirectDeclarator *direct_declarator;
-	PointerDeclarator *pointer;
-	PointerDirectDeclarator *pointer_direct_declarator;
+	IdentifierDeclarator *identifier_declarator;
+	
+	Pointer *pointer;
 	FunctionDefinition *function_definition;
 	DeclarationList *declaration_list;
 	CompoundStatement *compound_statement;
+	TypeQualifierList *type_qualifier_list;
 	
 	std::string *string;
+	IdentifierList *identifier_list;
 	int token;
 }
 
@@ -56,7 +66,7 @@
    calling an (NodeIdentifier*). It makes the compiler happy.
  */
 %type <translation_unit> program translation_unit
-%type <statement> external_declaration
+%type <statement> external_declaration statement
 %type <declaration> declaration
 %type <declaration_specifiers> declaration_specifiers
 %type <storage_class_specifier> storage_class_specifier
@@ -69,6 +79,13 @@
 %type <pointer> pointer
 %type <function_definition> function_definition
 %type <compound_statement> compound_statement
+%type <declaration_list> declaration_list
+%type <statement_list> statement_list
+%type <type_qualifier_list> type_qualifier_list
+%type <identifier_list> identifier_list
+%type <constant_expression> constant_expression
+%type <parameter_declaration> parameter_declaration
+%type <parameter_list> parameter_list parameter_type_list
 
 %start program
 %%
@@ -207,7 +224,7 @@ expression
 	;
 
 constant_expression
-	: conditional_expression
+	: conditional_expression { $$ = new ConstantExpression(); }
 	;
 
 declaration
@@ -257,26 +274,31 @@ type_specifier
 	| TYPE_NAME
 	;
 
+/** not implemented */
 struct_or_union_specifier
 	: struct_or_union IDENTIFIER '{' struct_declaration_list '}'
 	| struct_or_union '{' struct_declaration_list '}'
 	| struct_or_union IDENTIFIER
 	;
 
+/** not implemented */
 struct_or_union
 	: STRUCT
 	| UNION
 	;
 
+/** not implemented */
 struct_declaration_list
 	: struct_declaration
 	| struct_declaration_list struct_declaration
 	;
 
+/** not implemented */
 struct_declaration
 	: specifier_qualifier_list struct_declarator_list ';'
 	;
 
+/** not implemented */
 specifier_qualifier_list
 	: type_specifier specifier_qualifier_list
 	| type_specifier
@@ -284,28 +306,32 @@ specifier_qualifier_list
 	| type_qualifier
 	;
 
+/** not implemented */
 struct_declarator_list
 	: struct_declarator
 	| struct_declarator_list ',' struct_declarator
 	;
 
+/** not implemented */
 struct_declarator
 	: declarator
 	| ':' constant_expression
 	| declarator ':' constant_expression
 	;
 
+/** not implemented */
 enum_specifier
 	: ENUM '{' enumerator_list '}'
 	| ENUM IDENTIFIER '{' enumerator_list '}'
 	| ENUM IDENTIFIER
 	;
 
+/** not implemented */
 enumerator_list
 	: enumerator
 	| enumerator_list ',' enumerator
 	;
-
+/** not implemented */
 enumerator
 	: IDENTIFIER
 	| IDENTIFIER '=' constant_expression
@@ -317,52 +343,52 @@ type_qualifier
 	;
 
 declarator
-	: pointer direct_declarator { $$ = new PointerDirectDeclarator($1,$2); }
-	| direct_declarator
+	: pointer direct_declarator { $$ = new Declarator($1,$2); }
+	| direct_declarator { $$ = new Declarator($1); }
 	;
 
 direct_declarator
-	: IDENTIFIER { $$ = new DirectDeclarator(*$1); delete $1; }
-	| '(' declarator ')'
-	| direct_declarator '[' constant_expression ']'
-	| direct_declarator '[' ']'
-	| direct_declarator '(' parameter_type_list ')'
-	| direct_declarator '(' identifier_list ')'
-	| direct_declarator '(' ')' { $$ = $1; }
+	: IDENTIFIER { $$ = new IdentifierDeclarator(*$1); delete $1; }
+	| '(' declarator ')' { $$ = new NestedDeclarator($2); }
+	| direct_declarator '[' constant_expression ']' { $$ = new ArrayDeclarator($1,$3); }
+	| direct_declarator '[' ']' { $$ = new ArrayDeclarator($1); }
+	| direct_declarator '(' parameter_type_list ')' { $$ = new FunctionDeclarator($1,*$3); }
+	| direct_declarator '(' identifier_list ')' { $$ = new FunctionDeclarator($1,*$3); }
+	| direct_declarator '(' ')' { $$ = new FunctionDeclarator($1); }
 	;
 
 pointer
-	: '*' { $$ = new PointerDeclarator(); }
-	| '*' type_qualifier_list
-	| '*' pointer { $$ = new PointerDeclarator($2); }
-	| '*' type_qualifier_list pointer
+	: '*' { $$ = new Pointer(); }
+	| '*' type_qualifier_list { $$ = new Pointer(*$2); }
+	| '*' pointer { $$ = new Pointer($2); }
+	| '*' type_qualifier_list pointer { $$ = new Pointer(*$2,$3); }
 	;
 
 type_qualifier_list
-	: type_qualifier
-	| type_qualifier_list type_qualifier
+	: type_qualifier { $$ = new TypeQualifierList(); $$->push_back($1); }
+	| type_qualifier_list type_qualifier { $1->push_back($2); $$ = $1;}
 	;
 
 
 parameter_type_list
-	: parameter_list
-	| parameter_list ',' ELLIPSIS
+	: parameter_list 
+	| parameter_list ',' ELLIPSIS /** not implemented */
 	;
 
 parameter_list
-	: parameter_declaration
-	| parameter_list ',' parameter_declaration
+	: parameter_declaration { $$ = new ParameterDeclarationList(); $$->push_back($1); }
+	| parameter_list ',' parameter_declaration { $1->push_back($3); $$ = $1; }
 	;
 
 parameter_declaration
-	: declaration_specifiers declarator
-	| declaration_specifiers abstract_declarator
-	| declaration_specifiers
+	: declaration_specifiers declarator { $$ = new ParameterDeclaration(*$1,$2); }
+	| declaration_specifiers abstract_declarator /** not implemented */
+	| declaration_specifiers { $$ = new ParameterDeclaration(*$1); }
 	;
 
 identifier_list
-	: IDENTIFIER
-	| identifier_list ',' IDENTIFIER
+	: IDENTIFIER { $$ = new IdentifierList(); $$->push_back($1); }
+	| identifier_list ',' IDENTIFIER { $1->push_back($3), $$ = $1; }
 	;
 
 type_name
@@ -400,12 +426,12 @@ initializer_list
 	;
 
 statement
-	: labeled_statement
-	| compound_statement
-	| expression_statement
-	| selection_statement
-	| iteration_statement
-	| jump_statement
+	: labeled_statement 	/** @returns LabeledStatement */
+	| compound_statement	/** @returns CompoundStatement */
+	| expression_statement	/** @returns ExpressionStatement */
+	| selection_statement	/** @returns SelectionStatement */
+	| iteration_statement	/** @returns IterationStatement */
+	| jump_statement		/** @returns JumpStatement */
 	;
 
 labeled_statement
@@ -416,19 +442,19 @@ labeled_statement
 
 compound_statement
 	: '{' '}' { $$ = new CompoundStatement(); }
-	| '{' statement_list '}' { $$ = new CompoundStatement(); }
-	| '{' declaration_list '}' { $$ = new CompoundStatement(); }
-	| '{' declaration_list statement_list '}' { $$ = new CompoundStatement(); }
+	| '{' statement_list '}' { $$ = new CompoundStatement(*$2); }
+	| '{' declaration_list '}' { $$ = new CompoundStatement(*$2); }
+	| '{' declaration_list statement_list '}' { $$ = new CompoundStatement(*$2,*$3); }
 	;
 
 declaration_list
-	: declaration
-	| declaration_list declaration
+	: declaration { $$ = new DeclarationList(); $$->push_back($1); }
+	| declaration_list declaration { $1->push_back($2); $$ = $1; }
 	;
 
 statement_list
-	: statement
-	| statement_list statement
+	: statement { $$ = new StatementList(); $$->push_back($1); }
+	| statement_list statement { $1->push_back($2); $$ = $1; }
 	;
 
 expression_statement
@@ -462,7 +488,7 @@ program: translation_unit { root = $1; }
 
 translation_unit
 	: external_declaration { $$ = new TranslationUnit(); $$->statements.push_back($<statement>1); }
-	| translation_unit external_declaration { $1->statements.push_back($<statement>2); }
+	| translation_unit external_declaration { $1->statements.push_back($<statement>2); $$ = $1; }
 	;
 
 external_declaration
@@ -471,9 +497,9 @@ external_declaration
 	;
 
 function_definition
-	: declaration_specifiers declarator declaration_list compound_statement { $$ = new FunctionDefinition(); }
+	: declaration_specifiers declarator declaration_list compound_statement { $$ = new FunctionDefinition(*$1,$2,*$3,$4); }
 	| declaration_specifiers declarator compound_statement { $$ = new FunctionDefinition(*$1,$2,$3); }
-	| declarator declaration_list compound_statement { $$ = new FunctionDefinition(); }
+	| declarator declaration_list compound_statement { $$ = new FunctionDefinition($1,*$2,$3); }
 	| declarator compound_statement { $$ = new FunctionDefinition($1,$2); }
 	;
 
