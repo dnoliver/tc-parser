@@ -1,36 +1,20 @@
 #include "node.hpp"
 #include "ansi-c.tab.hpp"
 
-std::string XMLPrinter::getResult(){
-	std::string result = "<" + tagname;
-	
-	for (PropertyList::iterator i = properties.begin(); i != properties.end(); ++i) {
-    	result += i->first + "=" + i->second;
-    }
-	result += ">";
-	result += body;
-	result += "</" + tagname + ">";
-	
-	return result;
-}
-
 std::string TranslationUnit::toStdString(){
-	XMLPrinter printer("TranslationUnit");
-	std::string body = "";
+	std::string result = "<TranslationUnit>";
 	
 	/** Get childs std strings */
 	if(statements.size() != 0){
-		body += "<StatementList>";
-		StatementList::const_iterator it;
-		for (it = statements.begin(); it != statements.end(); it++) {
-			body += (**it).toStdString();
+		result += "<StatementList>";
+		for ( auto &i : statements) {
+			result += i->toStdString();
 		}
-		body += "</StatementList>";	
+		result += "</StatementList>";	
 	}
+	result += "</TranslationUnit>";
 	
-	printer.addBody(body);
-	
-	return printer.getResult();
+	return result;
 }
 
 std::string DeclarationSpecifier::toStdString(){
@@ -100,18 +84,16 @@ std::string FunctionDeclarator::toStdString(){
 	/** Get specifiers childs std strings */
 	if(identifier_list.size() != 0) {
 		result += "<IdentifierList>";
-		IdentifierList::const_iterator it_1;
-		for (it_1 = identifier_list.begin(); it_1 != identifier_list.end(); it_1++) {
-			result += (**it_1);
+		for ( auto &i : identifier_list) {
+			result += *i;
 		}
 		result += "</IdentifierList>";	
 	}
 	
 	if(parameter_type_list.size() != 0){
 		result += "<ParameterDeclarationList>";
-		ParameterDeclarationList::const_iterator it_2;
-		for (it_2 = parameter_type_list.begin(); it_2 != parameter_type_list.end(); it_2++) {
-			result += (**it_2).toStdString();
+		for ( auto &i : parameter_type_list) {
+			result += i->toStdString();
 		}
 		result += "</ParameterDeclarationList>";	
 	}
@@ -141,9 +123,8 @@ std::string Pointer::toStdString(){
 	/** Get specifiers childs std strings */
 	if(type_qualifier_list.size() != 0){
 		result += "<TypeQualifierList>";
-		TypeQualifierList::const_iterator it_1;
-		for (it_1 = type_qualifier_list.begin(); it_1 != type_qualifier_list.end(); it_1++) {
-			result += (**it_1).toStdString();
+		for ( auto &i : type_qualifier_list) {
+			result += i->toStdString();
 		}
 		result += "</TypeQualifierList>";	
 	}
@@ -155,7 +136,15 @@ std::string Pointer::toStdString(){
 
 std::string InitDeclarator::toStdString(){
 	std::string result = "<InitDeclarator>";
-	result += declarator->toStdString();
+	
+	if(declarator != NULL){
+		result += declarator->toStdString();	
+	}
+	
+	if(initializer != NULL){
+		result += initializer->toStdString();	
+	}
+	
 	result += "</InitDeclarator>";
 	
 	return result;
@@ -167,9 +156,8 @@ std::string Declaration::toStdString(){
 	/** Get specifiers childs std strings */
 	if(specifiers.size() != 0 ){
 		result += "<DeclarationSpecifierList>";
-		DeclarationSpecifierList::const_iterator it_1;
-		for (it_1 = specifiers.begin(); it_1 != specifiers.end(); it_1++) {
-			result += (**it_1).toStdString();
+		for ( auto &i : specifiers ) {
+			result += i->toStdString();
 		}
 		result += "</DeclarationSpecifierList>";	
 	}
@@ -177,9 +165,8 @@ std::string Declaration::toStdString(){
 	/** Get specifiers childs std strings */
 	if(declarators.size() != 0){
 		result += "<InitDeclaratorList>";
-		InitDeclaratorList::const_iterator it_2;
-		for (it_2 = declarators.begin(); it_2 != declarators.end(); it_2++) {
-			result += (**it_2).toStdString();
+		for( auto &i : declarators ) {
+			result += i->toStdString();
 		}
 		result += "</InitDeclaratorList>";	
 	}
@@ -195,9 +182,8 @@ std::string ParameterDeclaration::toStdString(){
 	/** Get specifiers childs std strings */
 	if(declaration_specifiers.size() != 0 ){
 		result += "<DeclarationSpecifierList>";
-		DeclarationSpecifierList::const_iterator it_1;
-		for (it_1 = declaration_specifiers.begin(); it_1 != declaration_specifiers.end(); it_1++) {
-			result += (**it_1).toStdString();
+		for( auto &i : declaration_specifiers ) {
+			result += i->toStdString();
 		}
 		result += "</DeclarationSpecifierList>";	
 	}
@@ -223,18 +209,16 @@ std::string CompoundStatement::toStdString(){
 	
 	if(statement_list.size() != 0){
 		result += "<StatementList>";
-		StatementList::const_iterator it_1;
-		for (it_1 = statement_list.begin(); it_1 != statement_list.end(); it_1++) {
-			result += (**it_1).toStdString();
+		for( auto &i : statement_list ) {
+			result += i->toStdString();
 		}
 		result += "</StatementList>";	
 	}
 	
 	if(declaration_list.size() != 0){
 		result += "<StatementList>";
-		DeclarationList::const_iterator it_2;
-		for (it_2 = declaration_list.begin(); it_2 != declaration_list.end(); it_2++) {
-			result += (**it_2).toStdString();
+		for( auto &i : declaration_list ) {
+			result += i->toStdString();
 		}
 		result += "</StatementList>";	
 	}
@@ -245,6 +229,14 @@ std::string CompoundStatement::toStdString(){
 
 std::string ExpressionStatement::toStdString(){
 	std::string result = "<ExpressionStatement>";
+	
+	if(expression_list.size() != 0){
+		result += "<ExpressionList>";
+		for( auto &i : expression_list ) {
+			result += i->toStdString();
+		}
+		result += "</ExpressionList>";	
+	}
 	result += "</ExpressionStatement>";
 	return result;
 }
@@ -262,7 +254,14 @@ std::string IterationStatement::toStdString(){
 }
 
 std::string JumpStatement::toStdString(){
-	std::string result = "<JumpStatement>";
+	std::string result = "<JumpStatement token='" + std::to_string(token) + "'";
+
+	if(token == GOTO){
+		result += " identifier='" + identifier + "'";
+	}
+
+	result += ">";
+
 	result += "</JumpStatement>";
 	return result;
 }
@@ -272,9 +271,8 @@ std::string FunctionDefinition::toStdString(){
 	
 	if(declaration_specifier_list.size() != 0){
 		result += "<DeclarationSpecifierList>";
-		DeclarationSpecifierList::const_iterator it;
-		for(it = declaration_specifier_list.begin(); it != declaration_specifier_list.end(); it++){
-			result += (**it).toStdString();
+		for( auto &i : declaration_specifier_list ) {
+			result += i->toStdString();
 		}
 		result += "</DeclarationSpecifierList>";	
 	}
@@ -285,9 +283,8 @@ std::string FunctionDefinition::toStdString(){
 	
 	if(declaration_list.size() != 0){
 		result += "<DeclarationList>";
-		DeclarationList::const_iterator it_2;
-		for(it_2 = declaration_list.begin(); it_2 != declaration_list.end(); it_2++){
-			result += (**it_2).toStdString();
+		for( auto &i : declaration_list ) {
+			result += i->toStdString();
 		}
 		result += "</DeclarationList>";	
 	}

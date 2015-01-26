@@ -28,10 +28,14 @@
 	TypeQualifier *type_qualifier;
 	InitDeclaratorList *init_declarator_list;
 	InitDeclarator *init_declarator;
+	Initializer *initializer;
 	Declarator *declarator;
 	
+	Expression *expression;
+	ExpressionList *expression_list;
 	
 	ConstantExpression *constant_expression;
+	AssignmentOperator *assignment_operator;
 	
 	DirectDeclarator *direct_declarator;
 	IdentifierDeclarator *identifier_declarator;
@@ -47,8 +51,8 @@
 	int token;
 }
 
-%token <string> IDENTIFIER
-%token CONSTANT STRING_LITERAL SIZEOF
+%token <string> IDENTIFIER CONSTANT STRING_LITERAL
+%token SIZEOF
 %token PTR_OP INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
 %token AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN
 %token SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN
@@ -66,7 +70,7 @@
    calling an (NodeIdentifier*). It makes the compiler happy.
  */
 %type <translation_unit> program translation_unit
-%type <statement> external_declaration statement
+%type <statement> external_declaration statement jump_statement
 %type <declaration> declaration
 %type <declaration_specifiers> declaration_specifiers
 %type <storage_class_specifier> storage_class_specifier
@@ -86,26 +90,34 @@
 %type <constant_expression> constant_expression
 %type <parameter_declaration> parameter_declaration
 %type <parameter_list> parameter_list parameter_type_list
+%type <expression_list> expression
+%type <expression> assignment_expression unary_expression postfix_expression primary_expression
+%type <expression> conditional_expression logical_or_expression logical_and_expression
+%type <expression> inclusive_or_expression exclusive_or_expression
+%type <expression> and_expression equality_expression relational_expression shift_expression
+%type <expression> additive_expression multiplicative_expression cast_expression
+%type <assignment_operator> assignment_operator
+%type <initializer> initializer
 
 %start program
 %%
 
 primary_expression
-	: IDENTIFIER
-	| CONSTANT
-	| STRING_LITERAL
-	| '(' expression ')'
+	: IDENTIFIER 			{ $$ = new PrimaryExpression(IDENTIFIER,*$1); delete $1; }
+	| CONSTANT				{ $$ = new PrimaryExpression(CONSTANT,*$1); delete $1; }
+	| STRING_LITERAL		{ $$ = new PrimaryExpression(STRING_LITERAL,*$1); delete $1; }
+	| '(' expression ')'	{ $$ = new PrimaryExpression(*$2); }
 	;
 
 postfix_expression
-	: primary_expression
-	| postfix_expression '[' expression ']'
-	| postfix_expression '(' ')'
-	| postfix_expression '(' argument_expression_list ')'
-	| postfix_expression '.' IDENTIFIER
-	| postfix_expression PTR_OP IDENTIFIER
-	| postfix_expression INC_OP
-	| postfix_expression DEC_OP
+	: primary_expression { $$ = $1; }
+	| postfix_expression '[' expression ']'					/** not implemented */
+	| postfix_expression '(' ')'							/** not implemented */
+	| postfix_expression '(' argument_expression_list ')'	/** not implemented */
+	| postfix_expression '.' IDENTIFIER 					/** not implemented */
+	| postfix_expression PTR_OP IDENTIFIER  				/** not implemented */
+	| postfix_expression INC_OP								{ $$ = new PostfixOperation($1,INC_OP); }
+	| postfix_expression DEC_OP								{ $$ = new PostfixOperation($1,DEC_OP); }
 	;
 
 argument_expression_list
@@ -114,12 +126,12 @@ argument_expression_list
 	;
 
 unary_expression
-	: postfix_expression
-	| INC_OP unary_expression
-	| DEC_OP unary_expression
-	| unary_operator cast_expression
-	| SIZEOF unary_expression
-	| SIZEOF '(' type_name ')'
+	: postfix_expression 				{ $$ = $1; }
+	| INC_OP unary_expression 			{ $$ = new UnaryOperation($2,INC_OP); }
+	| DEC_OP unary_expression 			{ $$ = new UnaryOperation($2,DEC_OP); }
+	| unary_operator cast_expression 	/** not implemented */
+	| SIZEOF unary_expression 			{ $$ = new UnaryOperation($2,SIZEOF); }
+	| SIZEOF '(' type_name ')' 			/** not implemented */
 	;
 
 unary_operator
@@ -132,95 +144,95 @@ unary_operator
 	;
 
 cast_expression
-	: unary_expression
-	| '(' type_name ')' cast_expression
+	: unary_expression { $$ = $1; }
+	| '(' type_name ')' cast_expression /** not implemented */
 	;
 
 multiplicative_expression
-	: cast_expression
-	| multiplicative_expression '*' cast_expression
-	| multiplicative_expression '/' cast_expression
-	| multiplicative_expression '%' cast_expression
+	: cast_expression { $$ = $1; }
+	| multiplicative_expression '*' cast_expression { $$ = new BinaryOperation($1,'*',$3); }
+	| multiplicative_expression '/' cast_expression { $$ = new BinaryOperation($1,'/',$3); }
+	| multiplicative_expression '%' cast_expression { $$ = new BinaryOperation($1,'%',$3); }
 	;
 
 additive_expression
-	: multiplicative_expression
-	| additive_expression '+' multiplicative_expression
-	| additive_expression '-' multiplicative_expression
+	: multiplicative_expression { $$ = $1; }
+	| additive_expression '+' multiplicative_expression { $$ = new BinaryOperation($1,'+',$3); }
+	| additive_expression '-' multiplicative_expression { $$ = new BinaryOperation($1,'-',$3); }
 	;
 
 shift_expression
-	: additive_expression
-	| shift_expression LEFT_OP additive_expression
-	| shift_expression RIGHT_OP additive_expression
+	: additive_expression { $$ = $1; } 
+	| shift_expression LEFT_OP additive_expression { $$ = new BinaryOperation($1,LEFT_OP,$3); }
+	| shift_expression RIGHT_OP additive_expression { $$ = new BinaryOperation($1,RIGHT_OP,$3); }
 	;
 
 relational_expression
-	: shift_expression
-	| relational_expression '<' shift_expression
-	| relational_expression '>' shift_expression
-	| relational_expression LE_OP shift_expression
-	| relational_expression GE_OP shift_expression
+	: shift_expression { $$ = $1; }
+	| relational_expression '<' shift_expression { $$ = new BinaryOperation($1,'<',$3); }
+	| relational_expression '>' shift_expression { $$ = new BinaryOperation($1,'>',$3); }
+	| relational_expression LE_OP shift_expression { $$ = new BinaryOperation($1,LE_OP,$3); }
+	| relational_expression GE_OP shift_expression { $$ = new BinaryOperation($1,GE_OP,$3); }
 	;
 
 equality_expression
-	: relational_expression
-	| equality_expression EQ_OP relational_expression
-	| equality_expression NE_OP relational_expression
+	: relational_expression { $$ = $1; }
+	| equality_expression EQ_OP relational_expression { $$ = new BinaryOperation($1,EQ_OP,$3); }
+	| equality_expression NE_OP relational_expression { $$ = new BinaryOperation($1,NE_OP,$3); }
 	;
 
 and_expression
-	: equality_expression
-	| and_expression '&' equality_expression
+	: equality_expression { $$ = $1; }
+	| and_expression '&' equality_expression { $$ = new BinaryOperation($1,'&',$3); }
 	;
 
 exclusive_or_expression
-	: and_expression
-	| exclusive_or_expression '^' and_expression
+	: and_expression { $$ = $1; }
+	| exclusive_or_expression '^' and_expression { $$ = new BinaryOperation($1,'^',$3); }
 	;
 
 inclusive_or_expression
-	: exclusive_or_expression
-	| inclusive_or_expression '|' exclusive_or_expression
+	: exclusive_or_expression { $$ = $1; }
+	| inclusive_or_expression '|' exclusive_or_expression { $$ = new BinaryOperation($1,'|',$3); }
 	;
 
 logical_and_expression
-	: inclusive_or_expression
-	| logical_and_expression AND_OP inclusive_or_expression
+	: inclusive_or_expression { $$ = $1; }
+	| logical_and_expression AND_OP inclusive_or_expression { $$ = new BinaryOperation($1,AND_OP,$3); }
 	;
 
 logical_or_expression
-	: logical_and_expression
-	| logical_or_expression OR_OP logical_and_expression
+	: logical_and_expression { $$ = $1; }
+	| logical_or_expression OR_OP logical_and_expression { $$ = new BinaryOperation($1,OR_OP,$3); }
 	;
 
 conditional_expression
-	: logical_or_expression
-	| logical_or_expression '?' expression ':' conditional_expression
+	: logical_or_expression { $$ = $1; }
+	| logical_or_expression '?' expression ':' conditional_expression { $$ = new ConditionalExpression($1,*$3,$5); }
 	;
 
 assignment_expression
 	: conditional_expression
-	| unary_expression assignment_operator assignment_expression
+	| unary_expression assignment_operator assignment_expression { $$ = new AssignmentExpression($1,$2,$3); }
 	;
 
 assignment_operator
-	: '='
-	| MUL_ASSIGN
-	| DIV_ASSIGN
-	| MOD_ASSIGN
-	| ADD_ASSIGN
-	| SUB_ASSIGN
-	| LEFT_ASSIGN
-	| RIGHT_ASSIGN
-	| AND_ASSIGN
-	| XOR_ASSIGN
-	| OR_ASSIGN
+	: '=' 			{ $$ = new AssignmentOperator('='); }
+	| MUL_ASSIGN	{ $$ = new AssignmentOperator(MUL_ASSIGN); }
+	| DIV_ASSIGN	{ $$ = new AssignmentOperator(DIV_ASSIGN); }
+	| MOD_ASSIGN	{ $$ = new AssignmentOperator(MOD_ASSIGN); }
+	| ADD_ASSIGN	{ $$ = new AssignmentOperator(ADD_ASSIGN); }
+	| SUB_ASSIGN	{ $$ = new AssignmentOperator(SUB_ASSIGN); }
+	| LEFT_ASSIGN	{ $$ = new AssignmentOperator(LEFT_ASSIGN); }
+	| RIGHT_ASSIGN	{ $$ = new AssignmentOperator(RIGHT_ASSIGN); }
+	| AND_ASSIGN	{ $$ = new AssignmentOperator(AND_ASSIGN); }
+	| XOR_ASSIGN	{ $$ = new AssignmentOperator(XOR_ASSIGN); }
+	| OR_ASSIGN		{ $$ = new AssignmentOperator(OR_ASSIGN); }
 	;
 
 expression
-	: assignment_expression
-	| expression ',' assignment_expression
+	: assignment_expression { $$ = new ExpressionList(); $$->push_back($1); }
+	| expression ',' assignment_expression { $1->push_back($3); $$ = $1; }
 	;
 
 constant_expression
@@ -248,7 +260,7 @@ init_declarator_list
 
 init_declarator
 	: declarator { $$ = new InitDeclarator($1); }
-	| declarator '=' initializer
+	| declarator '=' initializer { $$ = new InitDeclarator($1,$3); }
 	;
 
 storage_class_specifier
@@ -338,35 +350,35 @@ enumerator
 	;
 
 type_qualifier
-	: CONST { $$ = new TypeQualifier(CONST, "const"); }
-	| VOLATILE { $$ = new TypeQualifier(VOLATILE, "volatile"); }
+	: CONST 	{ $$ = new TypeQualifier(CONST, "const"); }
+	| VOLATILE 	{ $$ = new TypeQualifier(VOLATILE, "volatile"); }
 	;
 
 declarator
 	: pointer direct_declarator { $$ = new Declarator($1,$2); }
-	| direct_declarator { $$ = new Declarator($1); }
+	| direct_declarator 		{ $$ = new Declarator($1); }
 	;
 
 direct_declarator
-	: IDENTIFIER { $$ = new IdentifierDeclarator(*$1); delete $1; }
-	| '(' declarator ')' { $$ = new NestedDeclarator($2); }
+	: IDENTIFIER 									{ $$ = new IdentifierDeclarator(*$1); delete $1; }
+	| '(' declarator ')' 							{ $$ = new NestedDeclarator($2); }
 	| direct_declarator '[' constant_expression ']' { $$ = new ArrayDeclarator($1,$3); }
-	| direct_declarator '[' ']' { $$ = new ArrayDeclarator($1); }
+	| direct_declarator '[' ']' 					{ $$ = new ArrayDeclarator($1); }
 	| direct_declarator '(' parameter_type_list ')' { $$ = new FunctionDeclarator($1,*$3); }
-	| direct_declarator '(' identifier_list ')' { $$ = new FunctionDeclarator($1,*$3); }
-	| direct_declarator '(' ')' { $$ = new FunctionDeclarator($1); }
+	| direct_declarator '(' identifier_list ')' 	{ $$ = new FunctionDeclarator($1,*$3); }
+	| direct_declarator '(' ')' 					{ $$ = new FunctionDeclarator($1); }
 	;
 
 pointer
-	: '*' { $$ = new Pointer(); }
-	| '*' type_qualifier_list { $$ = new Pointer(*$2); }
-	| '*' pointer { $$ = new Pointer($2); }
-	| '*' type_qualifier_list pointer { $$ = new Pointer(*$2,$3); }
+	: '*' 									{ $$ = new Pointer(); }
+	| '*' type_qualifier_list 				{ $$ = new Pointer(*$2); }
+	| '*' pointer 							{ $$ = new Pointer($2); }
+	| '*' type_qualifier_list pointer 		{ $$ = new Pointer(*$2,$3); }
 	;
 
 type_qualifier_list
-	: type_qualifier { $$ = new TypeQualifierList(); $$->push_back($1); }
-	| type_qualifier_list type_qualifier { $1->push_back($2); $$ = $1;}
+	: type_qualifier 						{ $$ = new TypeQualifierList(); $$->push_back($1); }
+	| type_qualifier_list type_qualifier 	{ $1->push_back($2); $$ = $1;}
 	;
 
 
@@ -415,7 +427,7 @@ direct_abstract_declarator
 	;
 
 initializer
-	: assignment_expression
+	: assignment_expression 		{ $$ = new Initializer($1); }
 	| '{' initializer_list '}'
 	| '{' initializer_list ',' '}'
 	;
@@ -476,10 +488,10 @@ iteration_statement
 	;
 
 jump_statement
-	: GOTO IDENTIFIER ';'
-	| CONTINUE ';'
-	| BREAK ';'
-	| RETURN ';'
+	: GOTO IDENTIFIER ';'	{ $$ = new JumpStatement(GOTO,*$2); delete $2; }
+	| CONTINUE ';' 			{ $$ = new JumpStatement(CONTINUE); }
+	| BREAK ';'				{ $$ = new JumpStatement(BREAK); }
+	| RETURN ';'			{ $$ = new JumpStatement(RETURN); }
 	| RETURN expression ';'
 	;
 

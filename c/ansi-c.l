@@ -55,16 +55,16 @@ int check_type();
 
 {L}({L}|{D})*		{ count(); SAVE_TOKEN; return(check_type()); }
 
-0[xX]{H}+{IS}?		{ count(); return(CONSTANT); }
-0{D}+{IS}?		{ count(); return(CONSTANT); }
-{D}+{IS}?		{ count(); return(CONSTANT); }
-L?'(\\.|[^\\'])+'	{ count(); return(CONSTANT); }
+0[xX]{H}+{IS}?		{ count(); SAVE_TOKEN; return(CONSTANT); }
+0{D}+{IS}?			{ count(); SAVE_TOKEN; return(CONSTANT); }
+{D}+{IS}?			{ count(); SAVE_TOKEN; return(CONSTANT); }
+L?'(\\.|[^\\'])+'	{ count(); SAVE_TOKEN; return(CONSTANT); }
 
-{D}+{E}{FS}?		{ count(); return(CONSTANT); }
-{D}*"."{D}+({E})?{FS}?	{ count(); return(CONSTANT); }
-{D}+"."{D}*({E})?{FS}?	{ count(); return(CONSTANT); }
+{D}+{E}{FS}?			{ count(); SAVE_TOKEN; return(CONSTANT); }
+{D}*"."{D}+({E})?{FS}?	{ count(); SAVE_TOKEN; return(CONSTANT); }
+{D}+"."{D}*({E})?{FS}?	{ count(); SAVE_TOKEN; return(CONSTANT); }
 
-L?\"(\\.|[^\\"])*\"	{ count(); return(STRING_LITERAL); }
+L?\"(\\.|[^\\"])*\"		{ count(); SAVE_TOKEN; return(STRING_LITERAL); }
 
 "..."			{ count(); return(ELLIPSIS); }
 ">>="			{ count(); return(RIGHT_ASSIGN); }
