@@ -51,3 +51,62 @@ se debe describir la problemática abordada en el trabajo final, el desarrollo d
 propuesta y una conclusión. El texto deberá ser conciso y con descripciones apropiadas.
 No se debe incluir el código fuente, sino los textos necesarios para realizar las explicaciones
 pertinentes.
+
+Como extender el parser
+=======================
+
+## ansi-c.l
+
+No se necesita modificar mucho en este archivo, lo unica modificacion probable es la de hacer 
+que una regla devuelva mas que el TOKEN (el cual siempre es un int). Por ejemplo, para IDENTIFIER,
+STRING_LITERAL y CONSTANT se devuelve el TOKEN y el string que cumple la regla. Para hacer esto hay 
+que usar la macro SAVE_TOKEN en ansi-c.l 
+
+```
+0[xX]{H}+{IS}?		{ count(); SAVE_TOKEN; return(CONSTANT); }
+```
+
+Eso hace CONSTANT tenga un campo string donde se guarda la cadena que invoca la regla.
+Para usar ese string, en ansi-c.y se tiene que declarar el tipo de valor que devuelve la regla
+
+```
+%token <string> IDENTIFIER CONSTANT STRING_LITERAL
+```
+
+Entonces, en la regla se puede user el string, CONSTANT es el token, y $1 es un puntero a string.
+```
+| CONSTANT				{ $$ = new PrimaryExpression(CONSTANT,*$1); }
+```
+
+## ansi-c.y
+Este archivo si hay que tocarlo mucho. Para extenderla identificacion de reglas:
+
+* Elegir una regla que no este implementada
+```
+jump_statement
+	: GOTO IDENTIFIER ';'   { $$ = new JumpStatement(GOTO,*$2); }
+	| CONTINUE ';'          { $$ = new JumpStatement(CONTINUE); }
+	| BREAK ';'             { $$ = new JumpStatement(BREAK); }
+	| RETURN ';'            { $$ = new JumpStatement(RETURN); }
+	| RETURN expression ';' /** not implemented */
+	;
+```
+la ultima regla no esta implementada, asi que hacemos esa. Primero, hay que ver que tipo de dato retorna `expression`
+```
+expression
+	: assignment_expression { $$ = new ExpressionList(); $$->push_back($1); }
+	| expression ',' assignment_expression { $1->push_back($3); $$ = $1; }
+	;
+```
+ahi se ve que `expression` retorna un objecto de tipo `ExpressionList *`. Hay que extender la clase `JumpStatement` para que acepte el parametro `expression`
+
+* Extender la clase que representa el nodo
+
+Agregar a `JumpStatement` un miembro de tipo `ExpressionList` (no puntero) y hacer un constructor que reciba ese parametro `ExpressionList`.
+
+Despues, extender el metodo `toStdString` para que genere el XML de `ExpressionList`, hay varios lugares donde se genera ese XML podes ver por ahi.
+
+* Agregar un test que ejercite esa regla
+
+agregar en test.sh un test para lo implementado, y con `make test` validar que compile y pase, y que genere bien el XML.
+
