@@ -4,82 +4,112 @@
 class Node {
 	public:
 		virtual ~Node() {}
-		virtual std::string toStdString(){}
+		virtual std::string toStdString() = 0;
 };
 
 class Expression : public Node {
-	public:
-		virtual std::string toStdString(){}
+
 };
 
 typedef std::vector<Expression*> ExpressionList;
 
-class ConstantExpression : public Expression {
+class Operator : public Expression {
 	public:
-		virtual std::string toStdString(){ return "<ConstantExpression></ConstantExpression>"; }
+		std::string value;
+	
+		Operator(std::string value) : value(value) {}
+		std::string toStdString();
 };
+
+class ConstantExpression : public Expression {
+	
+};
+
+class Identifier : public Expression {
+	public:
+		std::string value;
+	
+		Identifier(std::string value) : value(value){}
+		std::string toStdString();
+};
+
+class Constant : public Expression {
+	public:
+		std::string value;
+	
+		Constant(std::string value) : value(value){}
+		std::string toStdString();
+};
+
+class StringLiteral : public Expression {
+	public:
+		std::string value;
+	
+		StringLiteral(std::string value) : value(value){}
+		std::string toStdString();
+};
+
+typedef std::vector<Identifier*> IdentifierList;
 
 class PrimaryExpression : public Expression {
 	public:
-		int token;
-		std::string value;
 		ExpressionList expression_list;
-	
-		PrimaryExpression(int token, std::string value) : token(token), value(value) {}
 		PrimaryExpression(ExpressionList expression_list) : expression_list(expression_list) {}
 	
-		virtual std::string toStdString(){ 
-			std::string result = "<PrimaryExpression value='" + value + "'>";
-			result += "</PrimaryExpression>"; 
-			
-			return result;
-		}
+		virtual std::string toStdString();
 };
 
 class PostfixOperation : public Expression {
 	public:
-		Expression *operand;
+		Expression *operand = NULL;
 		int unary_operator;
 	
 		PostfixOperation(Expression *operand, int unary_operator) :
 			operand(operand), unary_operator(unary_operator) {}
 	
-		virtual std::string toStdString(){
-			std::string result = "<PostfixOperation operator='" + std::to_string(unary_operator) + "'>";
-			
-			if(operand != NULL){
-				result += operand->toStdString();
-			}
-			
-			result += "</PostfixOperation>";
-			return result;
-		}
+		virtual std::string toStdString();
+};
+
+class ArrayAccess : public Expression {
+	public:
+		Expression *postfix_expression = NULL;
+		ExpressionList expression;
+	
+		ArrayAccess(Expression *postfix_expression,ExpressionList expression):
+			postfix_expression(postfix_expression),
+			expression(expression){}
+	
+		std::string toStdString();
+};
+
+class FunctionCall : public Expression {
+  public:
+    Expression *postifx_expression = NULL;
+    ExpressionList argument_expression_list;
+  
+    FunctionCall(Expression *postifx_expression) : postifx_expression(postifx_expression){}
+    FunctionCall(Expression *postifx_expression, ExpressionList argument_expression_list) : 
+      postifx_expression(postifx_expression),
+      argument_expression_list(argument_expression_list) {}
+  
+    virtual std::string toStdString();
 };
 
 class UnaryOperation : public Expression {
 	public:
-		Expression *operand;
+		Expression *operand = NULL;
 		int unary_operator;
 	
 		UnaryOperation(Expression *operand, int unary_operator) :
 			operand(operand), unary_operator(unary_operator) {}
 	
-		virtual std::string toStdString(){
-			std::string result = "<UnaryOperation operator='" + std::to_string(unary_operator) + "'>";
-			
-			if(operand != NULL){
-				result += operand->toStdString();
-			}
-			
-			result += "</UnaryOperation>";
-			return result;
-		}
+		virtual std::string toStdString();
 };
 
 class BinaryOperation : public Expression {
 	public:
-		Expression *right_operand;
-		Expression *left_operand;
+		Expression *right_operand = NULL;
+		Expression *left_operand = NULL;
 		int binary_operator;
 	
 		BinaryOperation(Expression *left_operand, int binary_operator, Expression *right_operand) :
@@ -87,27 +117,14 @@ class BinaryOperation : public Expression {
 			binary_operator(binary_operator),
 			left_operand(left_operand) {}
 			
-		virtual std::string toStdString(){
-			std::string result = "<BinaryOperation operator='" + std::to_string(binary_operator) + "'>";
-			
-			if(left_operand != NULL){
-				result += left_operand->toStdString();
-			}
-			
-			if(right_operand != NULL){
-				result += right_operand->toStdString();
-			}
-			
-			result += "</BinaryOperation>";
-			return result;
-		}
+		virtual std::string toStdString();
 };
 
 class ConditionalExpression : public Expression {
 	public: 
-		Expression *logical_or_expression;
+		Expression *logical_or_expression = NULL;
 		ExpressionList expression; 
-		Expression *conditional_expression;
+		Expression *conditional_expression = NULL;
 	
 		ConditionalExpression(Expression *logical_or_expression,
 							ExpressionList expression,
@@ -116,54 +133,23 @@ class ConditionalExpression : public Expression {
 		expression(expression),
 		conditional_expression(conditional_expression) {}
 	
-		virtual std::string toStdString(){
-			std::string result = "<ConditionalExpression>";
-			
-			if(logical_or_expression != NULL){
-				result += logical_or_expression->toStdString();
-			}
-			
-			if(expression.size() != 0){
-				result += "<ExpressionList>";
-				for( auto &i : expression ) {
-					result += i->toStdString();
-				}
-				result += "</ExpressionList>";	
-			}
-			
-			if(conditional_expression != NULL){
-				result += conditional_expression->toStdString();
-			}
-			
-			result += "</ConditionalExpression>";
-			return result;
-		}
-};
-
-class AssignmentOperator : public Expression {
-	public:
-		int token;
-	
-		AssignmentOperator(int token) : token(token) {}
-		virtual std::string toStdString(){ return "<AssignmentOperator></AssignmentOperator>"; }
+		virtual std::string toStdString();
 };
 
 class AssignmentExpression : public Expression {
 	public:
-		AssignmentOperator *assignament_operator;
-		Expression *unary_expression;
-		Expression *assignment_expression;
+		Operator *assignment_operator = NULL;
+		Expression *unary_expression = NULL;
+		Expression *assignment_expression = NULL;
 	
 		AssignmentExpression(Expression *unary_expression, 
-							 AssignmentOperator *assignment_expression, 
-							 Expression *assignament_expression) :
+							 Operator *assignment_operator, 
+							 Expression *assignment_expression) :
 			unary_expression(unary_expression), 
-			assignament_operator(assignament_operator),
+			assignment_operator(assignment_operator),
 			assignment_expression(assignment_expression) {}
 	
-		virtual std::string toStdString(){ 
-			return "<AssignmentExpression></AssignmentExpression>"; 
-		}
+		virtual std::string toStdString();
 };
 
 class Statement : public Node {
@@ -179,8 +165,7 @@ class TranslationUnit : public Expression {
 };
 
 class DeclarationSpecifier : public Statement {
-	public:
-		virtual std::string toStdString();
+	
 };
 
 typedef std::vector<DeclarationSpecifier*> DeclarationSpecifierList;
@@ -231,23 +216,21 @@ class IdentifierDeclarator : public DirectDeclarator {
 
 class ArrayDeclarator : public DirectDeclarator {
 	public:
-		DirectDeclarator *direct_declarator;
-		ConstantExpression *constant_expression;
+		DirectDeclarator *direct_declarator = NULL;
+		Expression *constant_expression = NULL;
 	
 		ArrayDeclarator(DirectDeclarator *direct_declarator) : direct_declarator(direct_declarator) {}
-		ArrayDeclarator(DirectDeclarator *direct_declarator, ConstantExpression *constant_expression) : 
+		ArrayDeclarator(DirectDeclarator *direct_declarator, Expression *constant_expression) : 
 			direct_declarator(direct_declarator), constant_expression(constant_expression) {}
 		virtual std::string toStdString();
 };
-
-typedef std::vector<std::string*> IdentifierList;
 
 class Declarator;
 
 class ParameterDeclaration : public Statement {
 	public:
 		DeclarationSpecifierList declaration_specifiers;
-		Declarator *declarator;
+		Declarator *declarator = NULL;
 	
 		ParameterDeclaration(DeclarationSpecifierList declaration_specifiers, Declarator *declarator) :
 			declaration_specifiers(declaration_specifiers), declarator(declarator) {}
@@ -262,7 +245,7 @@ typedef std::vector<ParameterDeclaration*> ParameterDeclarationList;
 
 class FunctionDeclarator : public DirectDeclarator {
 	public:
-		DirectDeclarator *direct_declarator;
+		DirectDeclarator *direct_declarator = NULL;
 		IdentifierList identifier_list;
 		ParameterDeclarationList parameter_type_list;
 	
@@ -277,7 +260,7 @@ class FunctionDeclarator : public DirectDeclarator {
 class Pointer : public Statement {
 	public:
 		TypeQualifierList type_qualifier_list;
-		Pointer *child;
+		Pointer *child = NULL;
 	
 		Pointer() {}
 	
@@ -293,10 +276,11 @@ class Pointer : public Statement {
 
 class Declarator : public Statement {
 	public:
-		Pointer *pointer;
-		DirectDeclarator *direct_declarator;
+		Pointer *pointer = NULL;
+		DirectDeclarator *direct_declarator = NULL;
 	
 		Declarator(DirectDeclarator *direct_declarator) : direct_declarator(direct_declarator){}
+  
 		Declarator(Pointer *pointer, DirectDeclarator *direct_declarator) : 
 			pointer(pointer), direct_declarator(direct_declarator){}
 	
@@ -305,7 +289,7 @@ class Declarator : public Statement {
 
 class NestedDeclarator : public DirectDeclarator {
 	public:
-		Declarator *declarator;
+		Declarator *declarator = NULL;
 	
 		NestedDeclarator(Declarator *declarator) : declarator(declarator) {}
 		virtual std::string toStdString();
@@ -313,27 +297,17 @@ class NestedDeclarator : public DirectDeclarator {
 
 class Initializer : public Statement {
 	public:
-		Expression *assignment_expression;
+		Expression *assignment_expression = NULL;
 	
 		Initializer(Expression *assignment_expression) :
 			assignment_expression(assignment_expression) {}
-		virtual std::string toStdString(){
-			std::string result = "<Initializer>";
-			
-			if(assignment_expression != NULL){
-				result += assignment_expression->toStdString();
-			}
-			
-			result += "</Initializer>";
-			
-			return result;
-		}
+		virtual std::string toStdString();
 };
 
 class InitDeclarator : public Statement {
 	public:
-		Declarator *declarator;
-		Initializer *initializer;
+		Declarator *declarator = NULL;
+		Initializer *initializer = NULL;
 	
 		InitDeclarator(Declarator *declarator) : declarator(declarator) {}
 		InitDeclarator(Declarator *declarator, Initializer *initializer) : 
@@ -386,6 +360,8 @@ class ExpressionStatement : public Statement {
 	
 		ExpressionStatement(ExpressionList expression_list) : 
 			expression_list(expression_list) {}
+  
+        ExpressionStatement(){}
 	
 		virtual std::string toStdString();
 };
@@ -416,9 +392,9 @@ class JumpStatement : public Statement {
 class FunctionDefinition : public Statement {
 	public:
 		DeclarationSpecifierList declaration_specifier_list;
-		Declarator *declarator;
+		Declarator *declarator = NULL;
 		DeclarationList declaration_list;
-		CompoundStatement *compound_statement;
+		CompoundStatement *compound_statement = NULL;
 		
 		FunctionDefinition(DeclarationSpecifierList declaration_specifier_list, Declarator *declarator, DeclarationList declaration_list, CompoundStatement *compound_statement) :
 			declaration_specifier_list(declaration_specifier_list), 

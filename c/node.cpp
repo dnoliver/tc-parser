@@ -17,10 +17,6 @@ std::string TranslationUnit::toStdString(){
 	return result;
 }
 
-std::string DeclarationSpecifier::toStdString(){
-	return "<DeclarationSpecifier></DeclarationSpecifier>";
-}
-
 std::string StorageClassSpecifier::toStdString(){
 	std::string result = "<StorageClassSpecifier text='" + text + "'></StorageClassSpecifier>";
 	
@@ -59,6 +55,159 @@ std::string IdentifierDeclarator::toStdString(){
 	return result;
 }
 
+std::string Identifier::toStdString(){
+	std::string result = "<Identifier value='" + value + "'></Identifier>";
+	return result;
+}
+
+std::string Operator::toStdString(){
+	std::string result = "<Operator value='" + value + "'></Operator>";
+	return result;
+}
+
+std::string Constant::toStdString(){
+	std::string result = "<Constant value='" + value + "'></Constant>";
+	return result;
+}
+
+std::string StringLiteral::toStdString(){
+	std::string result = "<StringLiteral value='" + value + "'></StringLiteral>";
+	return result;
+}
+
+std::string PrimaryExpression::toStdString(){ 
+    std::string result = "<PrimaryExpression>";
+	
+	if(expression_list.size() != 0){
+		result += "<ExpressionList>";
+		for( auto &i : expression_list ){
+			result += i->toStdString();
+		}
+		result += "</ExpressionList>";
+	}
+	
+    result += "</PrimaryExpression>"; 
+
+    return result;
+}
+
+std::string PostfixOperation::toStdString(){
+    std::string result = "<PostfixOperation operator='" + std::to_string(unary_operator) + "'>";
+
+    if(operand != NULL){
+        result += operand->toStdString();
+    }
+
+    result += "</PostfixOperation>";
+    return result;
+}
+
+std::string ArrayAccess::toStdString(){
+	std::string result = "<ArrayAccess>";
+	
+	if(postfix_expression != NULL){
+		result += postfix_expression->toStdString();
+	}
+	
+	if(expression.size() != 0){
+		result += "<ExpressionList>";
+		for( auto &i : expression){
+			result += i->toStdString();
+		}
+		result += "</ExpressionList>";
+	}
+	
+	result += "</ArrayAccess>";
+	return result;
+}
+
+std::string FunctionCall::toStdString(){
+  std::string result = "<FunctionCall>";
+
+  if(postifx_expression != NULL){
+      result += postifx_expression->toStdString();
+  }
+  
+  if(argument_expression_list.size() != 0){
+	  result += "<ArgumentExpressionList>";
+	  for( auto &i : argument_expression_list){
+		  result += i->toStdString();
+	  }
+	  result += "</ArgumentExpressionList>";
+  }
+
+  result += "</FunctionCall>";
+  return result;
+}
+
+std::string UnaryOperation::toStdString(){
+    std::string result = "<UnaryOperation operator='" + std::to_string(unary_operator) + "'>";
+
+    if(operand != NULL){
+        result += operand->toStdString();
+    }
+
+    result += "</UnaryOperation>";
+    return result;
+}
+
+std::string BinaryOperation::toStdString(){
+    std::string result = "<BinaryOperation operator='" + std::to_string(binary_operator) + "'>";
+
+    if(left_operand != NULL){
+        result += left_operand->toStdString();
+    }
+
+    if(right_operand != NULL){
+        result += right_operand->toStdString();
+    }
+
+    result += "</BinaryOperation>";
+    return result;
+}
+
+std::string ConditionalExpression::toStdString(){
+    std::string result = "<ConditionalExpression>";
+
+    if(logical_or_expression != NULL){
+        result += logical_or_expression->toStdString();
+    }
+
+    if(expression.size() != 0){
+        result += "<ExpressionList>";
+        for( auto &i : expression ) {
+            result += i->toStdString();
+        }
+        result += "</ExpressionList>";	
+    }
+
+    if(conditional_expression != NULL){
+        result += conditional_expression->toStdString();
+    }
+
+    result += "</ConditionalExpression>";
+    return result;
+}
+
+std::string AssignmentExpression::toStdString(){
+  std::string result = "<AssignmentExpression>";
+  
+  if(unary_expression != NULL){
+    result += unary_expression->toStdString();
+  }
+  
+  if(assignment_operator != NULL){
+    result += assignment_operator->toStdString();
+  }
+  
+  if(assignment_expression != NULL){
+    result += assignment_expression->toStdString();
+  }
+  
+  result += "</AssignmentExpression>"; 
+  return result;
+}
+
 std::string ArrayDeclarator::toStdString(){
 	std::string result = "<ArrayDeclarator>";
 	
@@ -85,7 +234,7 @@ std::string FunctionDeclarator::toStdString(){
 	if(identifier_list.size() != 0) {
 		result += "<IdentifierList>";
 		for ( auto &i : identifier_list) {
-			result += *i;
+			result += i->toStdString();
 		}
 		result += "</IdentifierList>";	
 	}
@@ -150,6 +299,18 @@ std::string InitDeclarator::toStdString(){
 	return result;
 }
 
+std::string Initializer::toStdString(){
+    std::string result = "<Initializer>";
+
+    if(assignment_expression != NULL){
+        result += assignment_expression->toStdString();
+    }
+
+    result += "</Initializer>";
+
+    return result;
+}
+
 std::string Declaration::toStdString(){
 	std::string result = "<Declaration>";	
 	
@@ -188,7 +349,6 @@ std::string ParameterDeclaration::toStdString(){
 		result += "</DeclarationSpecifierList>";	
 	}
 	
-	/** Get specifiers childs std strings */
 	if(declarator != NULL){
 		result += declarator->toStdString();
 	}
@@ -207,17 +367,17 @@ std::string LabeledStatement::toStdString(){
 std::string CompoundStatement::toStdString(){
 	std::string result = "<CompoundStatement>";
 	
+    if(declaration_list.size() != 0){
+		result += "<DeclarationList>";
+		for( auto &i : declaration_list ) {
+			result += i->toStdString();
+		}
+		result += "</DeclarationList>";	
+	}
+  
 	if(statement_list.size() != 0){
 		result += "<StatementList>";
 		for( auto &i : statement_list ) {
-			result += i->toStdString();
-		}
-		result += "</StatementList>";	
-	}
-	
-	if(declaration_list.size() != 0){
-		result += "<StatementList>";
-		for( auto &i : declaration_list ) {
 			result += i->toStdString();
 		}
 		result += "</StatementList>";	

@@ -33,9 +33,9 @@
 	
 	Expression *expression;
 	ExpressionList *expression_list;
+    ExpressionStatement *expression_statement;
 	
-	ConstantExpression *constant_expression;
-	AssignmentOperator *assignment_operator;
+	Operator *op;
 	
 	DirectDeclarator *direct_declarator;
 	IdentifierDeclarator *identifier_declarator;
@@ -87,33 +87,33 @@
 %type <statement_list> statement_list
 %type <type_qualifier_list> type_qualifier_list
 %type <identifier_list> identifier_list
-%type <constant_expression> constant_expression
 %type <parameter_declaration> parameter_declaration
 %type <parameter_list> parameter_list parameter_type_list
-%type <expression_list> expression
-%type <expression> assignment_expression unary_expression postfix_expression primary_expression
+%type <expression_list> expression argument_expression_list
+%type <expression> constant_expression assignment_expression unary_expression postfix_expression primary_expression
 %type <expression> conditional_expression logical_or_expression logical_and_expression
 %type <expression> inclusive_or_expression exclusive_or_expression
 %type <expression> and_expression equality_expression relational_expression shift_expression
 %type <expression> additive_expression multiplicative_expression cast_expression
-%type <assignment_operator> assignment_operator
+%type <op> assignment_operator
 %type <initializer> initializer
+%type <expression_statement> expression_statement
 
 %start program
 %%
 
 primary_expression
-	: IDENTIFIER 			{ $$ = new PrimaryExpression(IDENTIFIER,*$1); delete $1; }
-	| CONSTANT				{ $$ = new PrimaryExpression(CONSTANT,*$1); delete $1; }
-	| STRING_LITERAL		{ $$ = new PrimaryExpression(STRING_LITERAL,*$1); delete $1; }
+	: IDENTIFIER 			{ $$ = new Identifier(*$1); delete $1; }
+	| CONSTANT				{ $$ = new Constant(*$1); delete $1; }
+	| STRING_LITERAL		{ $$ = new StringLiteral(*$1); delete $1; }
 	| '(' expression ')'	{ $$ = new PrimaryExpression(*$2); }
 	;
 
 postfix_expression
 	: primary_expression { $$ = $1; }
-	| postfix_expression '[' expression ']'					/** not implemented */
-	| postfix_expression '(' ')'							/** not implemented */
-	| postfix_expression '(' argument_expression_list ')'	/** not implemented */
+	| postfix_expression '[' expression ']'					{ $$ = new ArrayAccess($1,*$3); }
+	| postfix_expression '(' ')'							{ $$ = new FunctionCall($1); }
+	| postfix_expression '(' argument_expression_list ')'	{ $$ = new FunctionCall($1,*$3); }
 	| postfix_expression '.' IDENTIFIER 					/** not implemented */
 	| postfix_expression PTR_OP IDENTIFIER  				/** not implemented */
 	| postfix_expression INC_OP								{ $$ = new PostfixOperation($1,INC_OP); }
@@ -121,8 +121,8 @@ postfix_expression
 	;
 
 argument_expression_list
-	: assignment_expression
-	| argument_expression_list ',' assignment_expression
+	: assignment_expression { $$ = new ExpressionList(); $$->push_back($1); }
+	| argument_expression_list ',' assignment_expression { $1->push_back($3); $$ = $1; }
 	;
 
 unary_expression
@@ -212,22 +212,22 @@ conditional_expression
 	;
 
 assignment_expression
-	: conditional_expression
+	: conditional_expression { $$ = $1; }
 	| unary_expression assignment_operator assignment_expression { $$ = new AssignmentExpression($1,$2,$3); }
 	;
 
 assignment_operator
-	: '=' 			{ $$ = new AssignmentOperator('='); }
-	| MUL_ASSIGN	{ $$ = new AssignmentOperator(MUL_ASSIGN); }
-	| DIV_ASSIGN	{ $$ = new AssignmentOperator(DIV_ASSIGN); }
-	| MOD_ASSIGN	{ $$ = new AssignmentOperator(MOD_ASSIGN); }
-	| ADD_ASSIGN	{ $$ = new AssignmentOperator(ADD_ASSIGN); }
-	| SUB_ASSIGN	{ $$ = new AssignmentOperator(SUB_ASSIGN); }
-	| LEFT_ASSIGN	{ $$ = new AssignmentOperator(LEFT_ASSIGN); }
-	| RIGHT_ASSIGN	{ $$ = new AssignmentOperator(RIGHT_ASSIGN); }
-	| AND_ASSIGN	{ $$ = new AssignmentOperator(AND_ASSIGN); }
-	| XOR_ASSIGN	{ $$ = new AssignmentOperator(XOR_ASSIGN); }
-	| OR_ASSIGN		{ $$ = new AssignmentOperator(OR_ASSIGN); }
+	: '=' 			{ $$ = new Operator("="); }
+	| MUL_ASSIGN	{ $$ = new Operator("*="); }
+	| DIV_ASSIGN	{ $$ = new Operator("/="); }
+	| MOD_ASSIGN	{ $$ = new Operator("%="); }
+	| ADD_ASSIGN	{ $$ = new Operator("+="); }
+	| SUB_ASSIGN	{ $$ = new Operator("-="); }
+	| LEFT_ASSIGN	{ $$ = new Operator("<<="); }
+	| RIGHT_ASSIGN	{ $$ = new Operator(">>="); }
+	| AND_ASSIGN	{ $$ = new Operator("&="); }
+	| XOR_ASSIGN	{ $$ = new Operator("^="); }
+	| OR_ASSIGN		{ $$ = new Operator("|="); }
 	;
 
 expression
@@ -236,7 +236,7 @@ expression
 	;
 
 constant_expression
-	: conditional_expression { $$ = new ConstantExpression(); }
+	: conditional_expression { $$ = $1; }
 	;
 
 declaration
@@ -264,23 +264,23 @@ init_declarator
 	;
 
 storage_class_specifier
-	: TYPEDEF { $$ = new StorageClassSpecifier(TYPEDEF, "typedef"); }
-	| EXTERN { $$ = new StorageClassSpecifier(EXTERN, "extern"); }
-	| STATIC { $$ = new StorageClassSpecifier(STATIC, "static"); }
-	| AUTO { $$ = new StorageClassSpecifier(AUTO, "auto"); }
-	| REGISTER { $$ = new StorageClassSpecifier(REGISTER, "register"); }
+	: TYPEDEF 	{ $$ = new StorageClassSpecifier(TYPEDEF, "typedef"); }
+	| EXTERN 	{ $$ = new StorageClassSpecifier(EXTERN, "extern"); }
+	| STATIC 	{ $$ = new StorageClassSpecifier(STATIC, "static"); }
+	| AUTO 		{ $$ = new StorageClassSpecifier(AUTO, "auto"); }
+	| REGISTER 	{ $$ = new StorageClassSpecifier(REGISTER, "register"); }
 	;
 
 type_specifier
-	: VOID { $$ = new TypeSpecifier(VOID, "void"); }
-	| CHAR { $$ = new TypeSpecifier(CHAR, "char"); }
-	| SHORT { $$ = new TypeSpecifier(SHORT, "short"); }
-	| INT { $$ = new TypeSpecifier(INT, "int"); }
-	| LONG { $$ = new TypeSpecifier(LONG, "long"); }
-	| FLOAT { $$ = new TypeSpecifier(FLOAT, "float"); }
-	| DOUBLE { $$ = new TypeSpecifier(DOUBLE, "double"); }
-	| SIGNED { $$ = new TypeSpecifier(SIGNED, "signed"); }
-	| UNSIGNED { $$ = new TypeSpecifier(UNSIGNED, "unsigned"); }
+	: VOID 		{ $$ = new TypeSpecifier(VOID, "void"); }
+	| CHAR 		{ $$ = new TypeSpecifier(CHAR, "char"); }
+	| SHORT 	{ $$ = new TypeSpecifier(SHORT, "short"); }
+	| INT 		{ $$ = new TypeSpecifier(INT, "int"); }
+	| LONG 		{ $$ = new TypeSpecifier(LONG, "long"); }
+	| FLOAT 	{ $$ = new TypeSpecifier(FLOAT, "float"); }
+	| DOUBLE 	{ $$ = new TypeSpecifier(DOUBLE, "double"); }
+	| SIGNED 	{ $$ = new TypeSpecifier(SIGNED, "signed"); }
+	| UNSIGNED 	{ $$ = new TypeSpecifier(UNSIGNED, "unsigned"); }
 	| struct_or_union_specifier
 	| enum_specifier
 	| TYPE_NAME
@@ -393,14 +393,14 @@ parameter_list
 	;
 
 parameter_declaration
-	: declaration_specifiers declarator { $$ = new ParameterDeclaration(*$1,$2); }
-	| declaration_specifiers abstract_declarator /** not implemented */
-	| declaration_specifiers { $$ = new ParameterDeclaration(*$1); }
+	: declaration_specifiers declarator          { $$ = new ParameterDeclaration(*$1,$2); }
+	| declaration_specifiers abstract_declarator
+	| declaration_specifiers                     { $$ = new ParameterDeclaration(*$1); }
 	;
 
 identifier_list
-	: IDENTIFIER { $$ = new IdentifierList(); $$->push_back($1); }
-	| identifier_list ',' IDENTIFIER { $1->push_back($3), $$ = $1; }
+	: IDENTIFIER 						{ $$ = new IdentifierList(); $$->push_back(new Identifier(*$1)); }
+	| identifier_list ',' IDENTIFIER 	{ $1->push_back(new Identifier(*$3)), $$ = $1; }
 	;
 
 type_name
@@ -428,13 +428,13 @@ direct_abstract_declarator
 
 initializer
 	: assignment_expression 		{ $$ = new Initializer($1); }
-	| '{' initializer_list '}'
-	| '{' initializer_list ',' '}'
+	| '{' initializer_list '}'		/** not implemented */
+	| '{' initializer_list ',' '}'	/** not implemented */
 	;
 
 initializer_list
-	: initializer
-	| initializer_list ',' initializer
+	: initializer						/** not implemented */
+	| initializer_list ',' initializer	/** not implemented */
 	;
 
 statement
@@ -453,25 +453,25 @@ labeled_statement
 	;
 
 compound_statement
-	: '{' '}' { $$ = new CompoundStatement(); }
-	| '{' statement_list '}' { $$ = new CompoundStatement(*$2); }
-	| '{' declaration_list '}' { $$ = new CompoundStatement(*$2); }
-	| '{' declaration_list statement_list '}' { $$ = new CompoundStatement(*$2,*$3); }
+	: '{' '}' 									{ $$ = new CompoundStatement(); }
+	| '{' statement_list '}' 					{ $$ = new CompoundStatement(*$2); }
+	| '{' declaration_list '}' 					{ $$ = new CompoundStatement(*$2); }
+	| '{' declaration_list statement_list '}' 	{ $$ = new CompoundStatement(*$2,*$3); }
 	;
 
 declaration_list
-	: declaration { $$ = new DeclarationList(); $$->push_back($1); }
-	| declaration_list declaration { $1->push_back($2); $$ = $1; }
+	: declaration 					{ $$ = new DeclarationList(); $$->push_back($1); }
+	| declaration_list declaration 	{ $1->push_back($2); $$ = $1; }
 	;
 
 statement_list
-	: statement { $$ = new StatementList(); $$->push_back($1); }
-	| statement_list statement { $1->push_back($2); $$ = $1; }
+	: statement 				{ $$ = new StatementList(); $$->push_back($1); }
+	| statement_list statement 	{ $1->push_back($2); $$ = $1; }
 	;
 
 expression_statement
-	: ';'
-	| expression ';'
+	: ';'            { $$ = new ExpressionStatement(); }
+	| expression ';' { $$ = new ExpressionStatement(*$1); }
 	;
 
 selection_statement
