@@ -92,11 +92,15 @@ std::string PrimaryExpression::toStdString(){
 }
 
 std::string PostfixOperation::toStdString(){
-    std::string result = "<PostfixOperation operator='" + std::to_string(unary_operator) + "'>";
+    std::string result = "<PostfixOperation>";
 
     if(operand != NULL){
         result += operand->toStdString();
     }
+	
+	if(unary_operator != NULL){
+		result += unary_operator->toStdString();
+	}
 
     result += "</PostfixOperation>";
     return result;
@@ -141,8 +145,12 @@ std::string FunctionCall::toStdString(){
 }
 
 std::string UnaryOperation::toStdString(){
-    std::string result = "<UnaryOperation operator='" + std::to_string(unary_operator) + "'>";
+    std::string result = "<UnaryOperation>";
 
+	if(unary_operator != NULL){
+		result += unary_operator->toStdString();
+	}
+	
     if(operand != NULL){
         result += operand->toStdString();
     }
@@ -152,11 +160,15 @@ std::string UnaryOperation::toStdString(){
 }
 
 std::string BinaryOperation::toStdString(){
-    std::string result = "<BinaryOperation operator='" + std::to_string(binary_operator) + "'>";
+    std::string result = "<BinaryOperation>";
 
     if(left_operand != NULL){
         result += left_operand->toStdString();
     }
+	
+	if(binary_operator != NULL){
+		result += binary_operator->toStdString();
+	}
 
     if(right_operand != NULL){
         result += right_operand->toStdString();

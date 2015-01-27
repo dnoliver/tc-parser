@@ -116,8 +116,8 @@ postfix_expression
 	| postfix_expression '(' argument_expression_list ')'	{ $$ = new FunctionCall($1,*$3); }
 	| postfix_expression '.' IDENTIFIER 					/** not implemented */
 	| postfix_expression PTR_OP IDENTIFIER  				/** not implemented */
-	| postfix_expression INC_OP								{ $$ = new PostfixOperation($1,INC_OP); }
-	| postfix_expression DEC_OP								{ $$ = new PostfixOperation($1,DEC_OP); }
+	| postfix_expression INC_OP								{ $$ = new PostfixOperation($1,new Operator("++")); }
+	| postfix_expression DEC_OP								{ $$ = new PostfixOperation($1,new Operator("--")); }
 	;
 
 argument_expression_list
@@ -127,10 +127,10 @@ argument_expression_list
 
 unary_expression
 	: postfix_expression 				{ $$ = $1; }
-	| INC_OP unary_expression 			{ $$ = new UnaryOperation($2,INC_OP); }
-	| DEC_OP unary_expression 			{ $$ = new UnaryOperation($2,DEC_OP); }
+	| INC_OP unary_expression 			{ $$ = new UnaryOperation($2,new Operator("++")); }
+	| DEC_OP unary_expression 			{ $$ = new UnaryOperation($2,new Operator("--")); }
 	| unary_operator cast_expression 	/** not implemented */
-	| SIZEOF unary_expression 			{ $$ = new UnaryOperation($2,SIZEOF); }
+	| SIZEOF unary_expression 			{ $$ = new UnaryOperation($2,new Operator("sizeof")); }
 	| SIZEOF '(' type_name ')' 			/** not implemented */
 	;
 
@@ -144,66 +144,66 @@ unary_operator
 	;
 
 cast_expression
-	: unary_expression { $$ = $1; }
-	| '(' type_name ')' cast_expression /** not implemented */
+	: unary_expression 					{ $$ = $1; }
+	| '(' type_name ')' cast_expression	/** not implemented */
 	;
 
 multiplicative_expression
-	: cast_expression { $$ = $1; }
-	| multiplicative_expression '*' cast_expression { $$ = new BinaryOperation($1,'*',$3); }
-	| multiplicative_expression '/' cast_expression { $$ = new BinaryOperation($1,'/',$3); }
-	| multiplicative_expression '%' cast_expression { $$ = new BinaryOperation($1,'%',$3); }
+	: cast_expression 								{ $$ = $1; }
+	| multiplicative_expression '*' cast_expression { $$ = new BinaryOperation($1,new Operator("*"),$3); }
+	| multiplicative_expression '/' cast_expression { $$ = new BinaryOperation($1,new Operator("/"),$3); }
+	| multiplicative_expression '%' cast_expression { $$ = new BinaryOperation($1,new Operator("%"),$3); }
 	;
 
 additive_expression
-	: multiplicative_expression { $$ = $1; }
-	| additive_expression '+' multiplicative_expression { $$ = new BinaryOperation($1,'+',$3); }
-	| additive_expression '-' multiplicative_expression { $$ = new BinaryOperation($1,'-',$3); }
+	: multiplicative_expression 						{ $$ = $1; }
+	| additive_expression '+' multiplicative_expression { $$ = new BinaryOperation($1,new Operator("+"),$3); }
+	| additive_expression '-' multiplicative_expression { $$ = new BinaryOperation($1,new Operator("-"),$3); }
 	;
 
 shift_expression
-	: additive_expression { $$ = $1; } 
-	| shift_expression LEFT_OP additive_expression { $$ = new BinaryOperation($1,LEFT_OP,$3); }
-	| shift_expression RIGHT_OP additive_expression { $$ = new BinaryOperation($1,RIGHT_OP,$3); }
+	: additive_expression 							{ $$ = $1; } 
+	| shift_expression LEFT_OP additive_expression 	{ $$ = new BinaryOperation($1,new Operator("<<"),$3); }
+	| shift_expression RIGHT_OP additive_expression { $$ = new BinaryOperation($1,new Operator(">>"),$3); }
 	;
 
 relational_expression
-	: shift_expression { $$ = $1; }
-	| relational_expression '<' shift_expression { $$ = new BinaryOperation($1,'<',$3); }
-	| relational_expression '>' shift_expression { $$ = new BinaryOperation($1,'>',$3); }
-	| relational_expression LE_OP shift_expression { $$ = new BinaryOperation($1,LE_OP,$3); }
-	| relational_expression GE_OP shift_expression { $$ = new BinaryOperation($1,GE_OP,$3); }
+	: shift_expression 								{ $$ = $1; }
+	| relational_expression '<' shift_expression 	{ $$ = new BinaryOperation($1,new Operator("<"),$3); }
+	| relational_expression '>' shift_expression 	{ $$ = new BinaryOperation($1,new Operator(">"),$3); }
+	| relational_expression LE_OP shift_expression 	{ $$ = new BinaryOperation($1,new Operator("<="),$3); }
+	| relational_expression GE_OP shift_expression 	{ $$ = new BinaryOperation($1,new Operator(">="),$3); }
 	;
 
 equality_expression
-	: relational_expression { $$ = $1; }
-	| equality_expression EQ_OP relational_expression { $$ = new BinaryOperation($1,EQ_OP,$3); }
-	| equality_expression NE_OP relational_expression { $$ = new BinaryOperation($1,NE_OP,$3); }
+	: relational_expression								{ $$ = $1; }
+	| equality_expression EQ_OP relational_expression 	{ $$ = new BinaryOperation($1,new Operator("=="),$3); }
+	| equality_expression NE_OP relational_expression 	{ $$ = new BinaryOperation($1,new Operator("!="),$3); }
 	;
 
 and_expression
-	: equality_expression { $$ = $1; }
-	| and_expression '&' equality_expression { $$ = new BinaryOperation($1,'&',$3); }
+	: equality_expression 						{ $$ = $1; }
+	| and_expression '&' equality_expression 	{ $$ = new BinaryOperation($1,new Operator("&"),$3); }
 	;
 
 exclusive_or_expression
-	: and_expression { $$ = $1; }
-	| exclusive_or_expression '^' and_expression { $$ = new BinaryOperation($1,'^',$3); }
+	: and_expression 								{ $$ = $1; }
+	| exclusive_or_expression '^' and_expression 	{ $$ = new BinaryOperation($1,new Operator("^"),$3); }
 	;
 
 inclusive_or_expression
-	: exclusive_or_expression { $$ = $1; }
-	| inclusive_or_expression '|' exclusive_or_expression { $$ = new BinaryOperation($1,'|',$3); }
+	: exclusive_or_expression 								{ $$ = $1; }
+	| inclusive_or_expression '|' exclusive_or_expression 	{ $$ = new BinaryOperation($1,new Operator("|"),$3); }
 	;
 
 logical_and_expression
-	: inclusive_or_expression { $$ = $1; }
-	| logical_and_expression AND_OP inclusive_or_expression { $$ = new BinaryOperation($1,AND_OP,$3); }
+	: inclusive_or_expression 								{ $$ = $1; }
+	| logical_and_expression AND_OP inclusive_or_expression { $$ = new BinaryOperation($1,new Operator("&&"),$3); }
 	;
 
 logical_or_expression
-	: logical_and_expression { $$ = $1; }
-	| logical_or_expression OR_OP logical_and_expression { $$ = new BinaryOperation($1,OR_OP,$3); }
+	: logical_and_expression 								{ $$ = $1; }
+	| logical_or_expression OR_OP logical_and_expression 	{ $$ = new BinaryOperation($1,new Operator("||"),$3); }
 	;
 
 conditional_expression

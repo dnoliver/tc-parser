@@ -62,9 +62,9 @@ class PrimaryExpression : public Expression {
 class PostfixOperation : public Expression {
 	public:
 		Expression *operand = NULL;
-		int unary_operator;
+		Operator *unary_operator = NULL;
 	
-		PostfixOperation(Expression *operand, int unary_operator) :
+		PostfixOperation(Expression *operand, Operator *unary_operator) :
 			operand(operand), unary_operator(unary_operator) {}
 	
 		virtual std::string toStdString();
@@ -98,9 +98,9 @@ class FunctionCall : public Expression {
 class UnaryOperation : public Expression {
 	public:
 		Expression *operand = NULL;
-		int unary_operator;
+		Operator *unary_operator = NULL;
 	
-		UnaryOperation(Expression *operand, int unary_operator) :
+		UnaryOperation(Expression *operand, Operator *unary_operator) :
 			operand(operand), unary_operator(unary_operator) {}
 	
 		virtual std::string toStdString();
@@ -110,9 +110,9 @@ class BinaryOperation : public Expression {
 	public:
 		Expression *right_operand = NULL;
 		Expression *left_operand = NULL;
-		int binary_operator;
+		Operator *binary_operator = NULL;
 	
-		BinaryOperation(Expression *left_operand, int binary_operator, Expression *right_operand) :
+		BinaryOperation(Expression *left_operand, Operator *binary_operator, Expression *right_operand) :
 			right_operand(right_operand),
 			binary_operator(binary_operator),
 			left_operand(left_operand) {}
