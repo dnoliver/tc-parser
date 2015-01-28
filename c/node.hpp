@@ -380,11 +380,15 @@ class JumpStatement : public Statement {
 	public:
 		int token;
 		std::string identifier;
+		ExpressionList expression_list;
 	
 		JumpStatement(int token) : token(token) {}
 		JumpStatement(int token, std::string identifier) : 
 			token(token),
 			identifier(identifier){}
+		JumpStatement(int token, ExpressionList expression_list) :
+			token(token),
+			expression_list(expression_list) {}
 	
 		virtual std::string toStdString();
 };

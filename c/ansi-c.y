@@ -492,7 +492,7 @@ jump_statement
 	| CONTINUE ';' 			{ $$ = new JumpStatement(CONTINUE); }
 	| BREAK ';'				{ $$ = new JumpStatement(BREAK); }
 	| RETURN ';'			{ $$ = new JumpStatement(RETURN); }
-	| RETURN expression ';'
+	| RETURN expression ';'	{ $$ = new JumpStatement(RETURN, *$2); delete $2; }
 	;
 
 program: translation_unit { root = $1; }

@@ -434,6 +434,14 @@ std::string JumpStatement::toStdString(){
 
 	result += ">";
 
+	if(expression_list.size() != 0){
+		result += "<ExpressionList>";
+		for(auto &i : expression_list){
+			result += i->toStdString();
+		}
+		result += "</ExpressionList>";
+	}
+
 	result += "</JumpStatement>";
 	return result;
 }
