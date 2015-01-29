@@ -22,8 +22,10 @@ std::string TranslationUnit::toPrettyCode(){
 	
 	/** Get childs std strings */
 	if(statements.size() != 0){
+		int size = statements.size();
 		for ( auto &i : statements) {
 			result += i->toPrettyCode();
+			result += --size == 0? "":"\n";
 		}
 	}
 	
@@ -741,14 +743,20 @@ std::string CompoundStatement::toPrettyCode(){
 	std::string result = "{";
 	
     if(declaration_list.size() != 0){
+		result += "\n";
+		int size = declaration_list.size();
 		for( auto &i : declaration_list ) {
 			result += i->toPrettyCode();
+			result += "\n"; 
 		}
 	}
   
 	if(statement_list.size() != 0){
+		result += "\n";
+		int size = statement_list.size();
 		for( auto &i : statement_list ) {
 			result += i->toPrettyCode();
+			result += "\n";
 		}
 	}
 	
@@ -812,6 +820,37 @@ std::string JumpStatement::toStdString(){
 	}
 
 	result += "</JumpStatement>";
+	return result;
+}
+
+std::string JumpStatement::toPrettyCode(){
+	std::string result = "";
+
+	if(token == GOTO){
+		result += "goto ";
+		result += identifier;
+		result += ";";
+	}
+	
+	if(token == CONTINUE){
+		result += "continue;";
+	}
+	
+	if(token == BREAK){
+		result += "break;";
+	}
+	
+	if(token == RETURN){
+		result += "return";
+		if(expression_list.size() != 0){
+			result += " ";
+			for(auto &i : expression_list){
+				result += i->toPrettyCode();
+			}
+		}
+		result += ";";
+	}
+
 	return result;
 }
 

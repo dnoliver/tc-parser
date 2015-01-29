@@ -422,6 +422,7 @@ class JumpStatement : public Statement {
 			expression_list(expression_list) {}
 	
 		virtual std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class FunctionDefinition : public Statement {
