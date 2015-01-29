@@ -5,6 +5,7 @@ class Node {
 	public:
 		virtual ~Node() {}
 		virtual std::string toStdString() = 0;
+		virtual std::string toPrettyCode(){ return ""; };
 };
 
 class Expression : public Node {
@@ -19,6 +20,7 @@ class Operator : public Expression {
 	
 		Operator(std::string value) : value(value) {}
 		std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class ConstantExpression : public Expression {
@@ -31,6 +33,7 @@ class Identifier : public Expression {
 	
 		Identifier(std::string value) : value(value){}
 		std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class Constant : public Expression {
@@ -39,6 +42,7 @@ class Constant : public Expression {
 	
 		Constant(std::string value) : value(value){}
 		std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class StringLiteral : public Expression {
@@ -47,6 +51,7 @@ class StringLiteral : public Expression {
 	
 		StringLiteral(std::string value) : value(value){}
 		std::string toStdString();
+		std::string toPrettyCode();
 };
 
 typedef std::vector<Identifier*> IdentifierList;
@@ -57,6 +62,7 @@ class PrimaryExpression : public Expression {
 		PrimaryExpression(ExpressionList expression_list) : expression_list(expression_list) {}
 	
 		virtual std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class PostfixOperation : public Expression {
@@ -68,6 +74,7 @@ class PostfixOperation : public Expression {
 			operand(operand), unary_operator(unary_operator) {}
 	
 		virtual std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class ArrayAccess : public Expression {
@@ -80,6 +87,7 @@ class ArrayAccess : public Expression {
 			expression(expression){}
 	
 		std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class FunctionCall : public Expression {
@@ -92,7 +100,8 @@ class FunctionCall : public Expression {
       postifx_expression(postifx_expression),
       argument_expression_list(argument_expression_list) {}
   
-    virtual std::string toStdString();
+    std::string toStdString();
+	std::string toPrettyCode();
 };
 
 class UnaryOperation : public Expression {
@@ -103,7 +112,8 @@ class UnaryOperation : public Expression {
 		UnaryOperation(Expression *operand, Operator *unary_operator) :
 			operand(operand), unary_operator(unary_operator) {}
 	
-		virtual std::string toStdString();
+		std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class BinaryOperation : public Expression {
@@ -118,6 +128,7 @@ class BinaryOperation : public Expression {
 			left_operand(left_operand) {}
 			
 		virtual std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class ConditionalExpression : public Expression {
@@ -133,7 +144,8 @@ class ConditionalExpression : public Expression {
 		expression(expression),
 		conditional_expression(conditional_expression) {}
 	
-		virtual std::string toStdString();
+		std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class AssignmentExpression : public Expression {
@@ -150,6 +162,7 @@ class AssignmentExpression : public Expression {
 			assignment_expression(assignment_expression) {}
 	
 		virtual std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class Statement : public Node {
@@ -161,7 +174,8 @@ typedef std::vector<Statement*> StatementList;
 class TranslationUnit : public Expression {
 	public:
 		StatementList statements;
-		virtual std::string toStdString();
+		std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class DeclarationSpecifier : public Statement {
@@ -173,31 +187,36 @@ typedef std::vector<DeclarationSpecifier*> DeclarationSpecifierList;
 class StorageClassSpecifier : public DeclarationSpecifier {
 	public:
 		int token;
-		std::string text;
+		std::string value;
 	
-		StorageClassSpecifier(int token, std::string text) 
-			: token(token), text(text) { }
-		virtual std::string toStdString();
+		StorageClassSpecifier(int token, std::string value) 
+			: token(token), value(value) { }
+		
+		std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class TypeSpecifier : public DeclarationSpecifier {
 	public:
 		int token;
-		std::string text;
+		std::string value;
 	
-		TypeSpecifier(int token, std::string text) 
-			: token(token), text(text) {}
-		virtual std::string toStdString();
+		TypeSpecifier(int token, std::string value) 
+			: token(token), value(value) {}
+		
+		std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class TypeQualifier : public DeclarationSpecifier {
 	public:
 		int token;
-		std::string text;
+		std::string value;
 	
-		TypeQualifier(int token, std::string text) 
-			: token(token), text(text) {}
-		virtual std::string toStdString();
+		TypeQualifier(int token, std::string value) 
+			: token(token), value(value) {}
+		std::string toStdString();
+		std::string toPrettyCode();
 };
 
 typedef std::vector<TypeQualifier*> TypeQualifierList;
@@ -211,7 +230,8 @@ class IdentifierDeclarator : public DirectDeclarator {
 		std::string identifier;
 	
 		IdentifierDeclarator(std::string identifier) : identifier(identifier) {}
-		virtual std::string toStdString();
+		std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class ArrayDeclarator : public DirectDeclarator {
@@ -222,7 +242,8 @@ class ArrayDeclarator : public DirectDeclarator {
 		ArrayDeclarator(DirectDeclarator *direct_declarator) : direct_declarator(direct_declarator) {}
 		ArrayDeclarator(DirectDeclarator *direct_declarator, Expression *constant_expression) : 
 			direct_declarator(direct_declarator), constant_expression(constant_expression) {}
-		virtual std::string toStdString();
+		std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class Declarator;
@@ -239,6 +260,7 @@ class ParameterDeclaration : public Statement {
 			declaration_specifiers(declaration_specifiers) {}
 	
 		virtual std::string toStdString();
+		std::string toPrettyCode();
 };
 
 typedef std::vector<ParameterDeclaration*> ParameterDeclarationList;
@@ -254,7 +276,8 @@ class FunctionDeclarator : public DirectDeclarator {
 			direct_declarator(direct_declarator), identifier_list(identifier_list) {}
 		FunctionDeclarator(DirectDeclarator *direct_declarator, ParameterDeclarationList parameter_type_list) : 
 			direct_declarator(direct_declarator), parameter_type_list(parameter_type_list) {}
-		virtual std::string toStdString();
+		std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class Pointer : public Statement {
@@ -271,7 +294,8 @@ class Pointer : public Statement {
 		Pointer(TypeQualifierList type_qualifier_list, Pointer *child) :
 			child(child), type_qualifier_list(type_qualifier_list) {}
 	
-		virtual std::string toStdString();
+		std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class Declarator : public Statement {
@@ -285,6 +309,7 @@ class Declarator : public Statement {
 			pointer(pointer), direct_declarator(direct_declarator){}
 	
 		virtual std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class NestedDeclarator : public DirectDeclarator {
@@ -302,6 +327,7 @@ class Initializer : public Statement {
 		Initializer(Expression *assignment_expression) :
 			assignment_expression(assignment_expression) {}
 		virtual std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class InitDeclarator : public Statement {
@@ -314,7 +340,8 @@ class InitDeclarator : public Statement {
 			declarator(declarator),
 			initializer(initializer) {}
 	
-		virtual std::string toStdString();
+		std::string toStdString();
+		std::string toPrettyCode();
 };
 
 typedef std::vector<InitDeclarator*> InitDeclaratorList;
@@ -327,7 +354,9 @@ class Declaration : public Statement {
 		Declaration(DeclarationSpecifierList specifiers) : specifiers(specifiers) {}
 		Declaration(DeclarationSpecifierList specifiers, InitDeclaratorList declarators) : 
 			specifiers(specifiers), declarators(declarators) {}
+	
 		virtual std::string toStdString();
+		std::string toPrettyCode();
 };
 
 typedef std::vector<Declaration*> DeclarationList;
@@ -352,6 +381,7 @@ class CompoundStatement : public Statement {
 			statement_list(statement_list), declaration_list(declaration_list) {}
 	
 		virtual std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class ExpressionStatement : public Statement {
@@ -364,6 +394,7 @@ class ExpressionStatement : public Statement {
         ExpressionStatement(){}
 	
 		virtual std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class SelectionStatement : public Statement {
@@ -412,4 +443,5 @@ class FunctionDefinition : public Statement {
 			declaration_specifier_list(declaration_specifier_list), declarator(declarator), compound_statement(compound_statement) {}
 		
 		virtual std::string toStdString();
+		std::string toPrettyCode();
 };

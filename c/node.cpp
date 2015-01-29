@@ -17,20 +17,44 @@ std::string TranslationUnit::toStdString(){
 	return result;
 }
 
-std::string StorageClassSpecifier::toStdString(){
-	std::string result = "<StorageClassSpecifier text='" + text + "'></StorageClassSpecifier>";
+std::string TranslationUnit::toPrettyCode(){
+	std::string result = "";
+	
+	/** Get childs std strings */
+	if(statements.size() != 0){
+		for ( auto &i : statements) {
+			result += i->toPrettyCode();
+		}
+	}
 	
 	return result;
 }
 
-std::string TypeSpecifier::toStdString(){
-	std::string result = "<TypeSpecifier text='" + text + "'></TypeSpecifier>";
+std::string StorageClassSpecifier::toStdString(){
+	std::string result = "<StorageClassSpecifier>" + value + "</StorageClassSpecifier>";
 	return result;
 }
 
-std::string TypeQualifier::toStdString(){
-	std::string result = "<TypeQualifier text='" + text + "'></TypeQualifier>";
+std::string StorageClassSpecifier::toPrettyCode(){
+	return value;
+}
+
+std::string TypeSpecifier::toStdString(){
+	std::string result = "<TypeSpecifier>" + value + "</TypeSpecifier>";
 	return result;
+}
+
+std::string TypeSpecifier::toPrettyCode(){
+	return value;
+}
+
+std::string TypeQualifier::toStdString(){
+	std::string result = "<TypeQualifier>" + value + "</TypeQualifier>";
+	return result;
+}
+
+std::string TypeQualifier::toPrettyCode(){
+	return value;
 }
 
 std::string Declarator::toStdString(){
@@ -49,10 +73,28 @@ std::string Declarator::toStdString(){
 	return result;
 }
 
+std::string Declarator::toPrettyCode(){
+	std::string result = "";
+	
+	if(pointer != NULL){
+		result += pointer->toPrettyCode();	
+	}
+	
+	if(direct_declarator != NULL){
+		result += direct_declarator->toPrettyCode();	
+	}
+	
+	return result;
+}
+
 std::string IdentifierDeclarator::toStdString(){
 	std::string result = "<IdentifierDeclarator identifier='" + identifier + "'></IdentifierDeclarator>";
 	
 	return result;
+}
+
+std::string IdentifierDeclarator::toPrettyCode(){
+	return identifier;
 }
 
 std::string Identifier::toStdString(){
@@ -60,9 +102,17 @@ std::string Identifier::toStdString(){
 	return result;
 }
 
+std::string Identifier::toPrettyCode(){
+	return value;
+}
+
 std::string Operator::toStdString(){
 	std::string result = "<Operator value='" + value + "'></Operator>";
 	return result;
+}
+
+std::string Operator::toPrettyCode(){
+	return value;
 }
 
 std::string Constant::toStdString(){
@@ -70,9 +120,17 @@ std::string Constant::toStdString(){
 	return result;
 }
 
+std::string Constant::toPrettyCode(){
+	return value;
+}
+
 std::string StringLiteral::toStdString(){
 	std::string result = "<StringLiteral value='" + value + "'></StringLiteral>";
 	return result;
+}
+
+std::string StringLiteral::toPrettyCode(){
+	return value;
 }
 
 std::string PrimaryExpression::toStdString(){ 
@@ -91,6 +149,20 @@ std::string PrimaryExpression::toStdString(){
     return result;
 }
 
+std::string PrimaryExpression::toPrettyCode(){ 
+    std::string result = "(";
+	
+	if(expression_list.size() != 0){
+		for( auto &i : expression_list ){
+			result += i->toPrettyCode();
+		}
+	}
+	
+    result += ")"; 
+
+    return result;
+}
+
 std::string PostfixOperation::toStdString(){
     std::string result = "<PostfixOperation>";
 
@@ -103,6 +175,19 @@ std::string PostfixOperation::toStdString(){
 	}
 
     result += "</PostfixOperation>";
+    return result;
+}
+
+std::string PostfixOperation::toPrettyCode(){
+    std::string result = "";
+
+    if(operand != NULL){
+        result += operand->toPrettyCode();
+    }
+	
+	if(unary_operator != NULL){
+		result += unary_operator->toPrettyCode();
+	}
     return result;
 }
 
@@ -125,6 +210,26 @@ std::string ArrayAccess::toStdString(){
 	return result;
 }
 
+std::string ArrayAccess::toPrettyCode(){
+	std::string result = "";
+	
+	if(postfix_expression != NULL){
+		result += postfix_expression->toPrettyCode();
+	}
+	
+	if(expression.size() != 0){
+		result += "[";
+		for( auto &i : expression){
+			result += i->toPrettyCode();
+		}
+		result += "]";
+	} else {
+		result += "[]";
+	}
+	
+	return result;
+}
+
 std::string FunctionCall::toStdString(){
   std::string result = "<FunctionCall>";
 
@@ -144,6 +249,27 @@ std::string FunctionCall::toStdString(){
   return result;
 }
 
+std::string FunctionCall::toPrettyCode(){
+	std::string result = "";
+
+	if(postifx_expression != NULL){
+		result += postifx_expression->toPrettyCode();
+	}
+
+	if(argument_expression_list.size() != 0){
+	  result += "(";
+	  for( auto &i : argument_expression_list){
+		  result += i->toPrettyCode();
+	  }
+	  result += ")";
+	}
+	else {
+		result += "()";
+	}
+
+	return result;
+}
+
 std::string UnaryOperation::toStdString(){
     std::string result = "<UnaryOperation>";
 
@@ -156,6 +282,20 @@ std::string UnaryOperation::toStdString(){
     }
 
     result += "</UnaryOperation>";
+    return result;
+}
+
+std::string UnaryOperation::toPrettyCode(){
+    std::string result = "";
+
+	if(unary_operator != NULL){
+		result += unary_operator->toPrettyCode();
+	}
+	
+    if(operand != NULL){
+        result += operand->toPrettyCode();
+    }
+
     return result;
 }
 
@@ -175,6 +315,26 @@ std::string BinaryOperation::toStdString(){
     }
 
     result += "</BinaryOperation>";
+    return result;
+}
+
+std::string BinaryOperation::toPrettyCode(){
+    std::string result = "";
+
+    if(left_operand != NULL){
+        result += left_operand->toPrettyCode();
+    }
+	
+	if(binary_operator != NULL){
+		result += " ";
+		result += binary_operator->toPrettyCode();
+	}
+
+    if(right_operand != NULL){
+		result += " ";
+        result += right_operand->toPrettyCode();
+    }
+
     return result;
 }
 
@@ -201,6 +361,30 @@ std::string ConditionalExpression::toStdString(){
     return result;
 }
 
+std::string ConditionalExpression::toPrettyCode(){
+    std::string result = "";
+
+    if(logical_or_expression != NULL){
+        result += logical_or_expression->toPrettyCode();
+		result += "?";
+    }
+
+    if(expression.size() != 0){
+        result += " ";
+        for( auto &i : expression ) {
+            result += i->toPrettyCode();
+        }
+        result += " :";	
+    }
+
+    if(conditional_expression != NULL){
+		result += " ";
+        result += conditional_expression->toPrettyCode();
+    }
+	
+    return result;
+}
+
 std::string AssignmentExpression::toStdString(){
   std::string result = "<AssignmentExpression>";
   
@@ -220,6 +404,26 @@ std::string AssignmentExpression::toStdString(){
   return result;
 }
 
+std::string AssignmentExpression::toPrettyCode(){
+	std::string result = "";
+
+	if(unary_expression != NULL){
+		result += unary_expression->toPrettyCode();
+	}
+
+	if(assignment_operator != NULL){
+		result += " ";
+		result += assignment_operator->toPrettyCode();
+	}
+
+	if(assignment_expression != NULL){
+		result += " ";
+		result += assignment_expression->toPrettyCode();
+	}
+
+	return result;
+}
+
 std::string ArrayDeclarator::toStdString(){
 	std::string result = "<ArrayDeclarator>";
 	
@@ -232,6 +436,24 @@ std::string ArrayDeclarator::toStdString(){
 	}
 	
 	result += "</ArrayDeclarator>";
+	return result;
+}
+
+std::string ArrayDeclarator::toPrettyCode(){
+	std::string result = "";
+	
+	if(direct_declarator != NULL){
+		result += direct_declarator->toPrettyCode();	
+	}
+	
+	result += "[";
+	
+	if(constant_expression != NULL){
+		result += constant_expression->toPrettyCode();	
+	}
+	
+	result += "]";
+	
 	return result;
 }
 
@@ -260,6 +482,33 @@ std::string FunctionDeclarator::toStdString(){
 	}
 	
 	result += "</FunctionDeclarator>";
+	return result;
+}
+
+std::string FunctionDeclarator::toPrettyCode(){
+	std::string result = "";
+	
+	if(direct_declarator != NULL){
+		result += direct_declarator->toPrettyCode();	
+	}
+	
+	result += "(";
+	if(parameter_type_list.size() != 0){
+		int size = parameter_type_list.size();
+		for ( auto &i : parameter_type_list) {
+			result += i->toPrettyCode();
+			result += --size == 0? "":", ";
+		}
+	}
+	
+	/** Get specifiers childs std strings */
+	if(identifier_list.size() != 0) {
+		for ( auto &i : identifier_list) {
+			result += i->toPrettyCode();
+		}
+	}
+	result += ")";
+	
 	return result;
 }
 
@@ -295,6 +544,23 @@ std::string Pointer::toStdString(){
 	return result;
 }
 
+std::string Pointer::toPrettyCode(){
+	std::string result = "*";
+	
+	if(child){
+		result += child->toPrettyCode();
+	}
+	
+	/** Get specifiers childs std strings */
+	if(type_qualifier_list.size() != 0){
+		for ( auto &i : type_qualifier_list) {
+			result += i->toPrettyCode();
+		}
+	}
+	
+	return result;
+}
+
 std::string InitDeclarator::toStdString(){
 	std::string result = "<InitDeclarator>";
 	
@@ -311,6 +577,21 @@ std::string InitDeclarator::toStdString(){
 	return result;
 }
 
+std::string InitDeclarator::toPrettyCode(){
+	std::string result = "";
+	
+	if(declarator != NULL){
+		result += declarator->toPrettyCode();	
+	}
+	
+	if(initializer != NULL){
+		result += " = ";
+		result += initializer->toPrettyCode();	
+	}
+	
+	return result;
+}
+
 std::string Initializer::toStdString(){
     std::string result = "<Initializer>";
 
@@ -319,6 +600,16 @@ std::string Initializer::toStdString(){
     }
 
     result += "</Initializer>";
+
+    return result;
+}
+
+std::string Initializer::toPrettyCode(){
+    std::string result = "";
+
+    if(assignment_expression != NULL){
+        result += assignment_expression->toPrettyCode();
+    }
 
     return result;
 }
@@ -349,6 +640,33 @@ std::string Declaration::toStdString(){
 	return result;
 }
 
+std::string Declaration::toPrettyCode(){
+	std::string result = "";	
+	
+	/** Get specifiers childs std strings */
+	if(specifiers.size() != 0 ){
+		int size = specifiers.size();
+		for ( auto &i : specifiers ) {
+			result += i->toPrettyCode();
+			result += --size == 0? "":" ";
+		}
+	}
+	
+	/** Get specifiers childs std stringqs */
+	if(declarators.size() != 0){
+		result += " ";
+		int size = declarators.size();
+		for( auto &i : declarators ) {
+			result += i->toPrettyCode();
+			result += --size == 0? "":", ";
+		}
+	}
+	
+	result += ";";
+	
+	return result;
+};
+
 std::string ParameterDeclaration::toStdString(){
 	std::string result = "<ParameterDeclaration>";	
 	
@@ -366,6 +684,26 @@ std::string ParameterDeclaration::toStdString(){
 	}
 	
 	result += "</ParameterDeclaration>";
+	
+	return result;
+}
+
+std::string ParameterDeclaration::toPrettyCode(){
+	std::string result = "";	
+	
+	/** Get specifiers childs std strings */
+	if(declaration_specifiers.size() != 0 ){
+		int size = declaration_specifiers.size();
+		for( auto &i : declaration_specifiers ) {
+			result += i->toPrettyCode();
+			result += --size == 0? "" : " ";
+		}
+	}
+	
+	if(declarator != NULL){
+		result += " ";
+		result += declarator->toPrettyCode();
+	}
 	
 	return result;
 }
@@ -399,6 +737,25 @@ std::string CompoundStatement::toStdString(){
 	return result;
 }
 
+std::string CompoundStatement::toPrettyCode(){
+	std::string result = "{";
+	
+    if(declaration_list.size() != 0){
+		for( auto &i : declaration_list ) {
+			result += i->toPrettyCode();
+		}
+	}
+  
+	if(statement_list.size() != 0){
+		for( auto &i : statement_list ) {
+			result += i->toPrettyCode();
+		}
+	}
+	
+	result += "}";
+	return result;
+}
+
 std::string ExpressionStatement::toStdString(){
 	std::string result = "<ExpressionStatement>";
 	
@@ -410,6 +767,18 @@ std::string ExpressionStatement::toStdString(){
 		result += "</ExpressionList>";	
 	}
 	result += "</ExpressionStatement>";
+	return result;
+}
+
+std::string ExpressionStatement::toPrettyCode(){
+	std::string result = "";
+	
+	if(expression_list.size() != 0){
+		for( auto &i : expression_list ) {
+			result += i->toPrettyCode();
+		}	
+	}
+	result += ";";
 	return result;
 }
 
@@ -466,5 +835,32 @@ std::string FunctionDefinition::toStdString(){
 	}
 	
 	result += "</FunctionDefinition>";
+	return result;
+}
+
+std::string FunctionDefinition::toPrettyCode(){
+	std::string result = "";
+	
+	if(declaration_specifier_list.size() != 0){
+		for( auto &i : declaration_specifier_list ) {
+			result += i->toPrettyCode();
+		}	
+	}
+	
+	if(declarator != NULL){
+		result += " ";
+		result += declarator->toPrettyCode();	
+	}
+	
+	if(declaration_list.size() != 0){
+		for( auto &i : declaration_list ) {
+			result += i->toPrettyCode();
+		}	
+	}
+
+	if(compound_statement != NULL){
+		result += compound_statement->toPrettyCode();	
+	}
+	
 	return result;
 }

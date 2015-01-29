@@ -245,12 +245,12 @@ declaration
 	;
 
 declaration_specifiers
-	: storage_class_specifier { $$ = new DeclarationSpecifierList(); $$->push_back($1); }
-	| storage_class_specifier declaration_specifiers { $2->push_back($1); $$ = $2; }
-	| type_specifier { $$ = new DeclarationSpecifierList(); $$->push_back($1); }
-	| type_specifier declaration_specifiers { $2->push_back($1); $$ = $2; }
-	| type_qualifier { $$ = new DeclarationSpecifierList(); $$->push_back($1); }
-	| type_qualifier declaration_specifiers { $2->push_back($1); $$ = $2; }
+	: storage_class_specifier 							{ $$ = new DeclarationSpecifierList(); $$->insert($$->begin(),$1); }
+	| storage_class_specifier declaration_specifiers 	{ $2->insert($2->begin(),$1); $$ = $2; }
+	| type_specifier 									{ $$ = new DeclarationSpecifierList(); $$->insert($$->begin(),$1); }
+	| type_specifier declaration_specifiers 			{ $2->insert($2->begin(),$1); $$ = $2; }
+	| type_qualifier 									{ $$ = new DeclarationSpecifierList(); $$->insert($$->begin(),$1); }
+	| type_qualifier declaration_specifiers 			{ $2->insert($2->begin(),$1); $$ = $2; }
 	;
 
 init_declarator_list
