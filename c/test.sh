@@ -53,6 +53,7 @@ assert "int f(){int x=0;}"
 assert "int f(){ return; }"
 assert "int f(){ break; }"
 assert "int f(){ goto x; }"
+assert "int f(){ return 1+1; }"
 
 ## complex programs 
 assert "int main(int argc,char **argv){ int x; int z[1]; x = 1; x++; return; }"
