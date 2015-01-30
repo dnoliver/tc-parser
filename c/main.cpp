@@ -10,6 +10,7 @@ int main(int argc, char **argv)
 	int parse_result = yyparse();
 	char *PARSE_AST = getenv ("PARSE_AST");
 	char *PARSE_CODE = getenv ("PARSE_CODE");
+	char *PARSE_SIMBOLS = getenv ("PARSE_SIMBOLS");
 	
 	if(parse_result == 0){
   		if (PARSE_AST != NULL){
@@ -20,6 +21,11 @@ int main(int argc, char **argv)
 		if (PARSE_CODE != NULL){
 			/** will print pretty code */
 			std::cout << root->toPrettyCode() << std::endl;	
+		}
+		
+		if(PARSE_SIMBOLS != NULL){
+			SymbolTable *st = SymbolTable::Instance();
+			std::cout << st->toStdString() << std::endl;
 		}
 	}
 	

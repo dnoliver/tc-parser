@@ -9,6 +9,8 @@ function assert {
 	echo
 	(echo $1 | PARSE_AST=TRUE ./parser | grep "<.*>" | xmllint --format -) || exit 1
 	echo
+	(echo $1 | PARSE_SIMBOLS=TRUE ./parser | grep "<.*>" | xmllint --format -) || exit 1
+	echo
 }
 
 ## type declaration
@@ -56,7 +58,7 @@ assert "int f(){ goto x; }"
 assert "int f(){ return 1+1; }"
 
 ## complex programs 
-assert "int main(int argc,char **argv){ int x; int z[1]; x = 1; x++; return; }"
+assert "int main(int argc,char **argv){ int x; int z[1]; x = 1; x++; return x; }"
 assert "int main(){ f(); }"
 assert "int main(){ f(1); }"
 assert "int main(){ int x[5]; x[1]++; }"

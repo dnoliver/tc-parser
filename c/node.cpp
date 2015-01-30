@@ -1,6 +1,18 @@
 #include "node.hpp"
 #include "ansi-c.tab.hpp"
 
+int INDENTATION = 0;
+
+std::string indent(std::string text){
+	std::string result = "";
+	for(int i = 0; i < INDENTATION; i++){
+		result += "\t";
+	}
+	result += text;
+	
+	return result;
+};
+
 std::string TranslationUnit::toStdString(){
 	std::string result = "<TranslationUnit>";
 	
@@ -59,8 +71,8 @@ std::string TypeQualifier::toPrettyCode(){
 	return value;
 }
 
-std::string Declarator::toStdString(){
-	std::string result = "<Declarator>";
+std::string PointerDeclarator::toStdString(){
+	std::string result = "<PointerDeclarator>";
 	
 	if(pointer != NULL){
 		result += pointer->toStdString();	
@@ -70,12 +82,12 @@ std::string Declarator::toStdString(){
 		result += direct_declarator->toStdString();	
 	}
 	
-	result += "</Declarator>";
+	result += "</PointerDeclarator>";
 	
 	return result;
 }
 
-std::string Declarator::toPrettyCode(){
+std::string PointerDeclarator::toPrettyCode(){
 	std::string result = "";
 	
 	if(pointer != NULL){
@@ -90,13 +102,19 @@ std::string Declarator::toPrettyCode(){
 }
 
 std::string IdentifierDeclarator::toStdString(){
-	std::string result = "<IdentifierDeclarator identifier='" + identifier + "'></IdentifierDeclarator>";
+	std::string result = "<IdentifierDeclarator>";
+		
+	if(identifier != NULL){
+		result += identifier->toStdString();
+	}
+	
+	result += "</IdentifierDeclarator>";
 	
 	return result;
 }
 
 std::string IdentifierDeclarator::toPrettyCode(){
-	return identifier;
+	return identifier->toPrettyCode();
 }
 
 std::string Identifier::toStdString(){
@@ -368,7 +386,7 @@ std::string ConditionalExpression::toPrettyCode(){
 
     if(logical_or_expression != NULL){
         result += logical_or_expression->toPrettyCode();
-		result += "?";
+		result += " ?";
     }
 
     if(expression.size() != 0){
@@ -524,6 +542,18 @@ std::string NestedDeclarator::toStdString(){
 	result += "</NestedDeclarator>";
 	return result;
 }
+
+std::string NestedDeclarator::toPrettyCode(){
+	std::string result = "(";
+	
+	if(declarator != NULL){
+		result += declarator->toPrettyCode();	
+	}
+	
+	result += ")";
+	return result;
+}
+
 
 std::string Pointer::toStdString(){
 	std::string result = "<Pointer>";
@@ -741,12 +771,13 @@ std::string CompoundStatement::toStdString(){
 
 std::string CompoundStatement::toPrettyCode(){
 	std::string result = "{";
+	INDENTATION++;
 	
     if(declaration_list.size() != 0){
 		result += "\n";
 		int size = declaration_list.size();
 		for( auto &i : declaration_list ) {
-			result += i->toPrettyCode();
+			result += indent(i->toPrettyCode());
 			result += "\n"; 
 		}
 	}
@@ -755,11 +786,12 @@ std::string CompoundStatement::toPrettyCode(){
 		result += "\n";
 		int size = statement_list.size();
 		for( auto &i : statement_list ) {
-			result += i->toPrettyCode();
+			result += indent(i->toPrettyCode());
 			result += "\n";
 		}
 	}
 	
+	INDENTATION--;
 	result += "}";
 	return result;
 }

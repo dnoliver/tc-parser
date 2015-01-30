@@ -1,16 +1,52 @@
+#ifndef NODE_H
+#define NODE_H
+
 #include <iostream>
 #include <vector>
+#include <map>
 
 class Node {
 	public:
 		virtual ~Node() {}
 		virtual std::string toStdString() = 0;
-		virtual std::string toPrettyCode(){ return ""; };
+		virtual std::string toPrettyCode() = 0;
 };
 
-class Expression : public Node {
+class DeclarationSpecifier;
+typedef std::vector<DeclarationSpecifier*> DeclarationSpecifierList;
 
+class Symbol {
+	public: 
+		std::string identifier;
+		Node* declarator = NULL;
+	
+		Symbol(std::string identifier, Node* declarator) :
+		identifier(identifier),
+		declarator(declarator) {}
+	
+		std::string toStdString();
 };
+
+typedef std::map<std::string,Symbol*> SymbolMap;
+
+class SymbolTable {
+	private:
+		static bool initialized;
+		static SymbolTable *instance;
+		SymbolMap symbols;
+		
+		SymbolTable(){}
+	public:
+		~SymbolTable(){
+			initialized = false;
+		}
+	
+		static SymbolTable *Instance();
+		void insert(std::string,Symbol*);
+		std::string toStdString();
+};
+
+class Expression : public Node {};
 
 typedef std::vector<Expression*> ExpressionList;
 
@@ -23,9 +59,7 @@ class Operator : public Expression {
 		std::string toPrettyCode();
 };
 
-class ConstantExpression : public Expression {
-	
-};
+class ConstantExpression : public Expression {};
 
 class Identifier : public Expression {
 	public:
@@ -35,6 +69,8 @@ class Identifier : public Expression {
 		std::string toStdString();
 		std::string toPrettyCode();
 };
+
+typedef std::vector<Identifier*> IdentifierList;
 
 class Constant : public Expression {
 	public:
@@ -53,8 +89,6 @@ class StringLiteral : public Expression {
 		std::string toStdString();
 		std::string toPrettyCode();
 };
-
-typedef std::vector<Identifier*> IdentifierList;
 
 class PrimaryExpression : public Expression {
 	public:
@@ -165,9 +199,7 @@ class AssignmentExpression : public Expression {
 		std::string toPrettyCode();
 };
 
-class Statement : public Node {
-	
-};
+class Statement : public Node {};
 
 typedef std::vector<Statement*> StatementList;
 
@@ -178,11 +210,7 @@ class TranslationUnit : public Expression {
 		std::string toPrettyCode();
 };
 
-class DeclarationSpecifier : public Statement {
-	
-};
-
-typedef std::vector<DeclarationSpecifier*> DeclarationSpecifierList;
+class DeclarationSpecifier : public Statement {};
 
 class StorageClassSpecifier : public DeclarationSpecifier {
 	public:
@@ -221,17 +249,30 @@ class TypeQualifier : public DeclarationSpecifier {
 
 typedef std::vector<TypeQualifier*> TypeQualifierList;
 
-class DirectDeclarator : public Statement {
-	
+class Declarator : public Statement {
+	public:
+		virtual std::string getIdentifier() = 0;
+};
+
+class DirectDeclarator : public Declarator {
+	public:
+		virtual std::string getIdentifier() = 0;
 };
 
 class IdentifierDeclarator : public DirectDeclarator {
 	public:
-		std::string identifier;
+		Identifier *identifier = NULL;
 	
-		IdentifierDeclarator(std::string identifier) : identifier(identifier) {}
+		IdentifierDeclarator(Identifier *identifier) : identifier(identifier) {
+			SymbolTable *st = SymbolTable::Instance();
+			st->insert(getIdentifier(),new Symbol(getIdentifier(),this));
+		}
+	
 		std::string toStdString();
 		std::string toPrettyCode();
+		std::string getIdentifier(){
+			return identifier->value;
+		}
 };
 
 class ArrayDeclarator : public DirectDeclarator {
@@ -244,9 +285,10 @@ class ArrayDeclarator : public DirectDeclarator {
 			direct_declarator(direct_declarator), constant_expression(constant_expression) {}
 		std::string toStdString();
 		std::string toPrettyCode();
+		std::string getIdentifier(){
+			return direct_declarator->getIdentifier();
+		}
 };
-
-class Declarator;
 
 class ParameterDeclaration : public Statement {
 	public:
@@ -259,7 +301,7 @@ class ParameterDeclaration : public Statement {
 		ParameterDeclaration(DeclarationSpecifierList declaration_specifiers) :
 			declaration_specifiers(declaration_specifiers) {}
 	
-		virtual std::string toStdString();
+		std::string toStdString();
 		std::string toPrettyCode();
 };
 
@@ -271,13 +313,20 @@ class FunctionDeclarator : public DirectDeclarator {
 		IdentifierList identifier_list;
 		ParameterDeclarationList parameter_type_list;
 	
-		FunctionDeclarator(DirectDeclarator *direct_declarator) : direct_declarator(direct_declarator) {}
+		FunctionDeclarator(DirectDeclarator *direct_declarator) : 
+			direct_declarator(direct_declarator) {}
+		
 		FunctionDeclarator(DirectDeclarator *direct_declarator, IdentifierList identifier_list) : 
 			direct_declarator(direct_declarator), identifier_list(identifier_list) {}
+		
 		FunctionDeclarator(DirectDeclarator *direct_declarator, ParameterDeclarationList parameter_type_list) : 
 			direct_declarator(direct_declarator), parameter_type_list(parameter_type_list) {}
+		
 		std::string toStdString();
 		std::string toPrettyCode();
+		std::string getIdentifier(){
+			return direct_declarator->getIdentifier();
+		}
 };
 
 class Pointer : public Statement {
@@ -298,18 +347,23 @@ class Pointer : public Statement {
 		std::string toPrettyCode();
 };
 
-class Declarator : public Statement {
+class PointerDeclarator : public DirectDeclarator {
 	public:
 		Pointer *pointer = NULL;
 		DirectDeclarator *direct_declarator = NULL;
 	
-		Declarator(DirectDeclarator *direct_declarator) : direct_declarator(direct_declarator){}
+		PointerDeclarator(DirectDeclarator *direct_declarator) : 
+			direct_declarator(direct_declarator){
+		}
   
-		Declarator(Pointer *pointer, DirectDeclarator *direct_declarator) : 
+		PointerDeclarator(Pointer *pointer, DirectDeclarator *direct_declarator) : 
 			pointer(pointer), direct_declarator(direct_declarator){}
 	
 		virtual std::string toStdString();
 		std::string toPrettyCode();
+		std::string getIdentifier(){
+			return direct_declarator->getIdentifier();
+		};
 };
 
 class NestedDeclarator : public DirectDeclarator {
@@ -317,7 +371,11 @@ class NestedDeclarator : public DirectDeclarator {
 		Declarator *declarator = NULL;
 	
 		NestedDeclarator(Declarator *declarator) : declarator(declarator) {}
-		virtual std::string toStdString();
+		std::string toStdString();
+		std::string toPrettyCode();
+		std::string getIdentifier(){
+			return declarator->getIdentifier();
+		}
 };
 
 class Initializer : public Statement {
@@ -349,9 +407,11 @@ typedef std::vector<InitDeclarator*> InitDeclaratorList;
 class Declaration : public Statement {
 	public:
 		DeclarationSpecifierList specifiers;
-		InitDeclaratorList declarators;	
+		InitDeclaratorList declarators;
 	
-		Declaration(DeclarationSpecifierList specifiers) : specifiers(specifiers) {}
+		Declaration(DeclarationSpecifierList specifiers) : 
+			specifiers(specifiers) {}
+	
 		Declaration(DeclarationSpecifierList specifiers, InitDeclaratorList declarators) : 
 			specifiers(specifiers), declarators(declarators) {}
 	
@@ -426,6 +486,7 @@ class JumpStatement : public Statement {
 };
 
 class FunctionDefinition : public Statement {
+	
 	public:
 		DeclarationSpecifierList declaration_specifier_list;
 		Declarator *declarator = NULL;
@@ -450,3 +511,5 @@ class FunctionDefinition : public Statement {
 		virtual std::string toStdString();
 		std::string toPrettyCode();
 };
+
+#endif /* NODE_H */

@@ -355,12 +355,12 @@ type_qualifier
 	;
 
 declarator
-	: pointer direct_declarator { $$ = new Declarator($1,$2); }
-	| direct_declarator 		{ $$ = new Declarator($1); }
+	: pointer direct_declarator { $$ = new PointerDeclarator($1,$2); }
+	| direct_declarator 		{ $$ = $1; }
 	;
 
 direct_declarator
-	: IDENTIFIER 									{ $$ = new IdentifierDeclarator(*$1); delete $1; }
+	: IDENTIFIER 									{ $$ = new IdentifierDeclarator(new Identifier(*$1)); delete $1; }
 	| '(' declarator ')' 							{ $$ = new NestedDeclarator($2); }
 	| direct_declarator '[' constant_expression ']' { $$ = new ArrayDeclarator($1,$3); }
 	| direct_declarator '[' ']' 					{ $$ = new ArrayDeclarator($1); }
