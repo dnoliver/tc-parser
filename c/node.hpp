@@ -421,9 +421,43 @@ class Declaration : public Statement {
 
 typedef std::vector<Declaration*> DeclarationList;
 
-class LabeledStatement : public Statement {
+class LabeledStatement : public Statement {};
+
+class CaseStatement : public LabeledStatement {
 	public:
-		virtual std::string toStdString();
+		Expression *constant_expression = NULL;
+		Statement *statement = NULL;
+	
+		CaseStatement(Expression *constant_expression, Statement *statement) :
+			constant_expression(constant_expression),
+			statement(statement) {}
+	
+		std::string toStdString();
+		std::string toPrettyCode();
+};
+
+class DefaultStatement : public LabeledStatement {
+	public:
+		Statement *statement = NULL;
+	
+		DefaultStatement(Statement *statement) :
+			statement(statement) {}
+	
+		std::string toStdString();
+		std::string toPrettyCode();
+};
+
+class TaggedStatement : public LabeledStatement {
+	public:
+		IdentifierDeclarator *identifier_declarator = NULL;
+		Statement *statement = NULL;
+	
+		TaggedStatement(IdentifierDeclarator *identifier_declarator, Statement *statement) :
+			identifier_declarator(identifier_declarator),
+			statement(statement) {}
+	
+		std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class CompoundStatement : public Statement {
@@ -486,7 +520,6 @@ class JumpStatement : public Statement {
 };
 
 class FunctionDefinition : public Statement {
-	
 	public:
 		DeclarationSpecifierList declaration_specifier_list;
 		Declarator *declarator = NULL;

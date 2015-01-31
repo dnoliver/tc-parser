@@ -70,7 +70,7 @@
    calling an (NodeIdentifier*). It makes the compiler happy.
  */
 %type <translation_unit> program translation_unit
-%type <statement> external_declaration statement jump_statement
+%type <statement> external_declaration statement jump_statement labeled_statement
 %type <declaration> declaration
 %type <declaration_specifiers> declaration_specifiers
 %type <storage_class_specifier> storage_class_specifier
@@ -394,7 +394,7 @@ parameter_list
 
 parameter_declaration
 	: declaration_specifiers declarator          { $$ = new ParameterDeclaration(*$1,$2); }
-	| declaration_specifiers abstract_declarator
+	| declaration_specifiers abstract_declarator /* not implemented */
 	| declaration_specifiers                     { $$ = new ParameterDeclaration(*$1); }
 	;
 
@@ -447,9 +447,9 @@ statement
 	;
 
 labeled_statement
-	: IDENTIFIER ':' statement
-	| CASE constant_expression ':' statement
-	| DEFAULT ':' statement
+	: IDENTIFIER ':' statement					{ $$ = new TaggedStatement(new IdentifierDeclarator(new Identifier(*$1)),$3); }
+	| CASE constant_expression ':' statement	{ $$ = new CaseStatement($2,$4); }
+	| DEFAULT ':' statement						{ $$ = new DefaultStatement($3); }
 	;
 
 compound_statement

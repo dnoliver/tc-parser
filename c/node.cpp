@@ -740,11 +740,91 @@ std::string ParameterDeclaration::toPrettyCode(){
 	return result;
 }
 
-std::string LabeledStatement::toStdString(){
-	std::string result = "<LabeledStatement>";
-	result += "</LabeledStatement>";
+std::string CaseStatement::toStdString(){
+	std::string result = "<CaseStatement>";
+	
+	if(constant_expression != NULL){
+		result += constant_expression->toStdString();
+	}
+	
+	if(statement != NULL){
+		result += statement->toStdString();
+	}
+	
+	result += "</CaseStatement>";
 	return result;
 }
+
+std::string CaseStatement::toPrettyCode(){
+	std::string result = "case";
+	
+	if(constant_expression != NULL){
+		result += " ";
+		result += constant_expression->toPrettyCode();
+		result += ":";
+	}
+	
+	if(statement != NULL){
+		result += " ";
+		result += statement->toPrettyCode();
+	}
+	
+	return result;
+}
+
+std::string DefaultStatement::toStdString(){
+	std::string result = "<DefaultStatement>";
+	
+	if(statement != NULL){
+		result += statement->toStdString();
+	}
+	
+	result += "</DefaultStatement>";
+	return result;
+}
+
+std::string DefaultStatement::toPrettyCode(){
+	std::string result = "default:";
+
+	if(statement != NULL){
+		result += " ";
+		result += statement->toPrettyCode();
+	}
+	
+	return result;
+}
+
+std::string TaggedStatement::toStdString(){
+	std::string result = "<TaggedStatement>";
+	
+	if(identifier_declarator != NULL){
+		result += identifier_declarator->toStdString();
+	}
+	
+	if(statement != NULL){
+		result += statement->toStdString();
+	}
+	
+	result += "</TaggedStatement>";
+	return result;
+}
+
+std::string TaggedStatement::toPrettyCode(){
+	std::string result = "";
+
+	if(identifier_declarator != NULL){
+		result += identifier_declarator->toPrettyCode();
+		result += ":";
+	}
+	
+	if(statement != NULL){
+		result += " ";
+		result += statement->toPrettyCode();
+	}
+	
+	return result;
+}
+
 
 std::string CompoundStatement::toStdString(){
 	std::string result = "<CompoundStatement>";

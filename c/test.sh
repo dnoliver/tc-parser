@@ -54,7 +54,7 @@ assert "int f(){int x=0;}"
 ## jump statement
 assert "int f(){ return; }"
 assert "int f(){ break; }"
-assert "int f(){ goto x; }"
+assert "int f(){ goto x; x: return 0;}"
 assert "int f(){ return 1+1; }"
 
 ## complex programs 
