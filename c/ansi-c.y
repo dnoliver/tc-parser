@@ -360,7 +360,7 @@ declarator
 	;
 
 direct_declarator
-	: IDENTIFIER 									{ $$ = new IdentifierDeclarator(new Identifier(*$1)); delete $1; }
+	: IDENTIFIER 									{ $$ = new IdentifierDeclarator(*$1); delete $1; }
 	| '(' declarator ')' 							{ $$ = new NestedDeclarator($2); }
 	| direct_declarator '[' constant_expression ']' { $$ = new ArrayDeclarator($1,$3); }
 	| direct_declarator '[' ']' 					{ $$ = new ArrayDeclarator($1); }
@@ -447,7 +447,7 @@ statement
 	;
 
 labeled_statement
-	: IDENTIFIER ':' statement					{ $$ = new TaggedStatement(new IdentifierDeclarator(new Identifier(*$1)),$3); }
+	: IDENTIFIER ':' statement					{ $$ = new TaggedStatement(new IdentifierDeclarator(*$1),$3); }
 	| CASE constant_expression ':' statement	{ $$ = new CaseStatement($2,$4); }
 	| DEFAULT ':' statement						{ $$ = new DefaultStatement($3); }
 	;

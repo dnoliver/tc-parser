@@ -102,19 +102,15 @@ std::string PointerDeclarator::toPrettyCode(){
 }
 
 std::string IdentifierDeclarator::toStdString(){
-	std::string result = "<IdentifierDeclarator>";
-		
-	if(identifier != NULL){
-		result += identifier->toStdString();
-	}
-	
+	std::string result = "<IdentifierDeclarator>";	
+	result += identifier;
 	result += "</IdentifierDeclarator>";
 	
 	return result;
 }
 
 std::string IdentifierDeclarator::toPrettyCode(){
-	return identifier->toPrettyCode();
+	return identifier;
 }
 
 std::string Identifier::toStdString(){

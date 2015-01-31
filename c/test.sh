@@ -58,10 +58,7 @@ assert "int f(){ goto x; x: return 0;}"
 assert "int f(){ return 1+1; }"
 
 ## complex programs 
-assert "int main(int argc,char **argv){ int x; int z[1]; x = 1; x++; return x; }"
-assert "int main(){ f(); }"
-assert "int main(){ f(1); }"
-assert "int main(){ int x[5]; x[1]++; }"
+assert "void f(){} int main(int argc,char **argv){ int x; int z[1]; x = 1; x++; f(); return x; }"
 
 echo
 echo "Ok"

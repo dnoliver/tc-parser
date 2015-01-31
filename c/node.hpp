@@ -19,12 +19,14 @@ class Symbol {
 	public: 
 		std::string identifier;
 		Node* declarator = NULL;
+		int invocations = 0;
 	
 		Symbol(std::string identifier, Node* declarator) :
 		identifier(identifier),
 		declarator(declarator) {}
 	
 		std::string toStdString();
+		void invoque();
 };
 
 typedef std::map<std::string,Symbol*> SymbolMap;
@@ -43,6 +45,8 @@ class SymbolTable {
 	
 		static SymbolTable *Instance();
 		void insert(std::string,Symbol*);
+		bool has(std::string);
+		void invoque(std::string);
 		std::string toStdString();
 };
 
@@ -65,7 +69,16 @@ class Identifier : public Expression {
 	public:
 		std::string value;
 	
-		Identifier(std::string value) : value(value){}
+		Identifier(std::string value) : value(value){
+			SymbolTable *st = SymbolTable::Instance();
+			
+			if(!st->has(value)) {
+				throw value + " is not declared";
+			}
+			else {
+				st->invoque(value);
+			}
+		}
 		std::string toStdString();
 		std::string toPrettyCode();
 };
@@ -249,30 +262,21 @@ class TypeQualifier : public DeclarationSpecifier {
 
 typedef std::vector<TypeQualifier*> TypeQualifierList;
 
-class Declarator : public Statement {
-	public:
-		virtual std::string getIdentifier() = 0;
-};
+class Declarator : public Statement {};
 
-class DirectDeclarator : public Declarator {
-	public:
-		virtual std::string getIdentifier() = 0;
-};
+class DirectDeclarator : public Declarator {};
 
 class IdentifierDeclarator : public DirectDeclarator {
 	public:
-		Identifier *identifier = NULL;
+		std::string identifier;
 	
-		IdentifierDeclarator(Identifier *identifier) : identifier(identifier) {
+		IdentifierDeclarator(std::string identifier) : identifier(identifier) {
 			SymbolTable *st = SymbolTable::Instance();
-			st->insert(getIdentifier(),new Symbol(getIdentifier(),this));
+			st->insert(identifier,new Symbol(identifier,this));
 		}
 	
 		std::string toStdString();
 		std::string toPrettyCode();
-		std::string getIdentifier(){
-			return identifier->value;
-		}
 };
 
 class ArrayDeclarator : public DirectDeclarator {
@@ -285,9 +289,6 @@ class ArrayDeclarator : public DirectDeclarator {
 			direct_declarator(direct_declarator), constant_expression(constant_expression) {}
 		std::string toStdString();
 		std::string toPrettyCode();
-		std::string getIdentifier(){
-			return direct_declarator->getIdentifier();
-		}
 };
 
 class ParameterDeclaration : public Statement {
@@ -324,9 +325,6 @@ class FunctionDeclarator : public DirectDeclarator {
 		
 		std::string toStdString();
 		std::string toPrettyCode();
-		std::string getIdentifier(){
-			return direct_declarator->getIdentifier();
-		}
 };
 
 class Pointer : public Statement {
@@ -361,9 +359,6 @@ class PointerDeclarator : public DirectDeclarator {
 	
 		virtual std::string toStdString();
 		std::string toPrettyCode();
-		std::string getIdentifier(){
-			return direct_declarator->getIdentifier();
-		};
 };
 
 class NestedDeclarator : public DirectDeclarator {
@@ -373,9 +368,6 @@ class NestedDeclarator : public DirectDeclarator {
 		NestedDeclarator(Declarator *declarator) : declarator(declarator) {}
 		std::string toStdString();
 		std::string toPrettyCode();
-		std::string getIdentifier(){
-			return declarator->getIdentifier();
-		}
 };
 
 class Initializer : public Statement {

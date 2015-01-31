@@ -2,15 +2,14 @@
 
 std::string Symbol::toStdString(){
 	std::string result = "<Symbol>";
-	
-	result += "<Identifier>";
-	result += identifier;
-	result += "</Identifier>";
-	
-	//result += declarator->toStdString();
-	
+	result += "<Identifier>" + identifier + "</Identifier>";
+	result += "<Invocations>" + std::to_string(invocations) + "</Invocations>";
 	result += "</Symbol>";
 	return result;
+}
+
+void Symbol::invoque(){
+	invocations++;
 }
 
 bool SymbolTable::initialized = false;
@@ -30,6 +29,22 @@ SymbolTable* SymbolTable::Instance() {
 void SymbolTable::insert(std::string identifier, Symbol* symbol){
 	symbols.emplace(identifier,symbol);
 }
+
+bool SymbolTable::has(std::string identifier){
+	return symbols.find(identifier) != symbols.end();
+}
+
+void SymbolTable::invoque(std::string identifier){
+	SymbolMap::iterator i = symbols.find(identifier);
+	
+	if( i != symbols.end()){
+		i->second->invoque();
+	}
+	else {
+		// throw exceptions
+	}
+}
+
 
 std::string SymbolTable::toStdString(){
 	std::string result = "<SymbolTable>";
