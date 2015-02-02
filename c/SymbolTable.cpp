@@ -1,4 +1,4 @@
-#include "node.hpp"
+#include "SymbolTable.hpp"
 
 std::string Symbol::toStdString(){
 	std::string result = "<Symbol>";

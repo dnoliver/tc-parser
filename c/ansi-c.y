@@ -15,21 +15,28 @@
 %}
 
 %union {
-	Node *node;
 	TranslationUnit *translation_unit;
+	
 	Statement *statement;
 	StatementList *statement_list;
+	
 	Declaration *declaration;
+	DeclarationList *declaration_list;
+	
 	ParameterDeclaration *parameter_declaration;
 	ParameterDeclarationList *parameter_list;
+	
 	DeclarationSpecifierList *declaration_specifiers;
 	StorageClassSpecifier *storage_class_specifier;
 	TypeSpecifier *type_specifier;
 	TypeQualifier *type_qualifier;
+	
 	InitDeclaratorList *init_declarator_list;
 	InitDeclarator *init_declarator;
 	Initializer *initializer;
+	
 	Declarator *declarator;
+	DirectDeclarator *direct_declarator;
 	
 	Expression *expression;
 	ExpressionList *expression_list;
@@ -37,12 +44,9 @@
 	
 	Operator *op;
 	
-	DirectDeclarator *direct_declarator;
-	IdentifierDeclarator *identifier_declarator;
-	
 	Pointer *pointer;
 	FunctionDefinition *function_definition;
-	DeclarationList *declaration_list;
+	
 	CompoundStatement *compound_statement;
 	TypeQualifierList *type_qualifier_list;
 	
@@ -95,7 +99,7 @@
 %type <expression> inclusive_or_expression exclusive_or_expression
 %type <expression> and_expression equality_expression relational_expression shift_expression
 %type <expression> additive_expression multiplicative_expression cast_expression
-%type <op> assignment_operator
+%type <op> assignment_operator unary_operator
 %type <initializer> initializer
 %type <expression_statement> expression_statement
 
@@ -129,18 +133,18 @@ unary_expression
 	: postfix_expression 				{ $$ = $1; }
 	| INC_OP unary_expression 			{ $$ = new UnaryOperation($2,new Operator("++")); }
 	| DEC_OP unary_expression 			{ $$ = new UnaryOperation($2,new Operator("--")); }
-	| unary_operator cast_expression 	/** not implemented */
+	| unary_operator cast_expression 	{ $$ = new UnaryOperation($2,$1); } /* (?) */
 	| SIZEOF unary_expression 			{ $$ = new UnaryOperation($2,new Operator("sizeof")); }
 	| SIZEOF '(' type_name ')' 			/** not implemented */
 	;
 
 unary_operator
-	: '&'
-	| '*'
-	| '+'
-	| '-'
-	| '~'
-	| '!'
+	: '&'	{ $$ = new Operator("&"); }
+	| '*'	{ $$ = new Operator("*"); }
+	| '+'	{ $$ = new Operator("+"); }
+	| '-'	{ $$ = new Operator("-"); }
+	| '~'	{ $$ = new Operator("~"); }
+	| '!'	{ $$ = new Operator("!"); }
 	;
 
 cast_expression
@@ -169,16 +173,16 @@ shift_expression
 
 relational_expression
 	: shift_expression 								{ $$ = $1; }
-	| relational_expression '<' shift_expression 	{ $$ = new BinaryOperation($1,new Operator("<"),$3); }
-	| relational_expression '>' shift_expression 	{ $$ = new BinaryOperation($1,new Operator(">"),$3); }
-	| relational_expression LE_OP shift_expression 	{ $$ = new BinaryOperation($1,new Operator("<="),$3); }
-	| relational_expression GE_OP shift_expression 	{ $$ = new BinaryOperation($1,new Operator(">="),$3); }
+	| relational_expression '<' shift_expression 	{ $$ = new LogicalOperation($1,new Operator("<"),$3); }
+	| relational_expression '>' shift_expression 	{ $$ = new LogicalOperation($1,new Operator(">"),$3); }
+	| relational_expression LE_OP shift_expression 	{ $$ = new LogicalOperation($1,new Operator("<="),$3); }
+	| relational_expression GE_OP shift_expression 	{ $$ = new LogicalOperation($1,new Operator(">="),$3); }
 	;
 
 equality_expression
 	: relational_expression								{ $$ = $1; }
-	| equality_expression EQ_OP relational_expression 	{ $$ = new BinaryOperation($1,new Operator("=="),$3); }
-	| equality_expression NE_OP relational_expression 	{ $$ = new BinaryOperation($1,new Operator("!="),$3); }
+	| equality_expression EQ_OP relational_expression 	{ $$ = new LogicalOperation($1,new Operator("=="),$3); }
+	| equality_expression NE_OP relational_expression 	{ $$ = new LogicalOperation($1,new Operator("!="),$3); }
 	;
 
 and_expression
@@ -231,8 +235,8 @@ assignment_operator
 	;
 
 expression
-	: assignment_expression { $$ = new ExpressionList(); $$->push_back($1); }
-	| expression ',' assignment_expression { $1->push_back($3); $$ = $1; }
+	: assignment_expression 				{ $$ = new ExpressionList(); $$->push_back($1); }
+	| expression ',' assignment_expression 	{ $1->push_back($3); $$ = $1; }
 	;
 
 constant_expression
@@ -240,8 +244,8 @@ constant_expression
 	;
 
 declaration
-	: declaration_specifiers ';' { $$ = new Declaration(*$1); }
-	| declaration_specifiers init_declarator_list ';' { $$ = new Declaration(*$1,*$2); }
+	: declaration_specifiers ';' 						{ $$ = new Declaration(*$1); }
+	| declaration_specifiers init_declarator_list ';' 	{ $$ = new Declaration(*$1,*$2); }
 	;
 
 declaration_specifiers
@@ -254,13 +258,13 @@ declaration_specifiers
 	;
 
 init_declarator_list
-	: init_declarator { $$ = new InitDeclaratorList(); $$->push_back($1); }
-	| init_declarator_list ',' init_declarator { $1->push_back($3), $$ = $1; }
+	: init_declarator 							{ $$ = new InitDeclaratorList(); $$->push_back($1); }
+	| init_declarator_list ',' init_declarator 	{ $1->push_back($3), $$ = $1; }
 	;
 
 init_declarator
-	: declarator { $$ = new InitDeclarator($1); }
-	| declarator '=' initializer { $$ = new InitDeclarator($1,$3); }
+	: declarator 					{ $$ = new InitDeclarator($1); }
+	| declarator '=' initializer 	{ $$ = new InitDeclarator($1,$3); }
 	;
 
 storage_class_specifier
@@ -272,18 +276,18 @@ storage_class_specifier
 	;
 
 type_specifier
-	: VOID 		{ $$ = new TypeSpecifier(VOID, "void"); }
-	| CHAR 		{ $$ = new TypeSpecifier(CHAR, "char"); }
-	| SHORT 	{ $$ = new TypeSpecifier(SHORT, "short"); }
-	| INT 		{ $$ = new TypeSpecifier(INT, "int"); }
-	| LONG 		{ $$ = new TypeSpecifier(LONG, "long"); }
-	| FLOAT 	{ $$ = new TypeSpecifier(FLOAT, "float"); }
-	| DOUBLE 	{ $$ = new TypeSpecifier(DOUBLE, "double"); }
-	| SIGNED 	{ $$ = new TypeSpecifier(SIGNED, "signed"); }
-	| UNSIGNED 	{ $$ = new TypeSpecifier(UNSIGNED, "unsigned"); }
-	| struct_or_union_specifier
-	| enum_specifier
-	| TYPE_NAME
+	: VOID 							{ $$ = new TypeSpecifier(VOID, "void"); }
+	| CHAR 							{ $$ = new TypeSpecifier(CHAR, "char"); }
+	| SHORT 						{ $$ = new TypeSpecifier(SHORT, "short"); }
+	| INT 							{ $$ = new TypeSpecifier(INT, "int"); }
+	| LONG 							{ $$ = new TypeSpecifier(LONG, "long"); }
+	| FLOAT 						{ $$ = new TypeSpecifier(FLOAT, "float"); }
+	| DOUBLE 						{ $$ = new TypeSpecifier(DOUBLE, "double"); }
+	| SIGNED 						{ $$ = new TypeSpecifier(SIGNED, "signed"); }
+	| UNSIGNED 						{ $$ = new TypeSpecifier(UNSIGNED, "unsigned"); }
+	| struct_or_union_specifier 	/* not implemented */
+	| enum_specifier				/* not implemented */
+	| TYPE_NAME						/* not implemented */
 	;
 
 /** not implemented */
@@ -383,13 +387,13 @@ type_qualifier_list
 
 
 parameter_type_list
-	: parameter_list 
-	| parameter_list ',' ELLIPSIS /** not implemented */
+	: parameter_list 				{ $$ = $1; }
+	| parameter_list ',' ELLIPSIS 	/** not implemented */
 	;
 
 parameter_list
-	: parameter_declaration { $$ = new ParameterDeclarationList(); $$->push_back($1); }
-	| parameter_list ',' parameter_declaration { $1->push_back($3); $$ = $1; }
+	: parameter_declaration 					{ $$ = new ParameterDeclarationList(); $$->push_back($1); }
+	| parameter_list ',' parameter_declaration 	{ $1->push_back($3); $$ = $1; }
 	;
 
 parameter_declaration
@@ -403,17 +407,20 @@ identifier_list
 	| identifier_list ',' IDENTIFIER 	{ $1->push_back(new Identifier(*$3)), $$ = $1; }
 	;
 
+/* not implemented */
 type_name
 	: specifier_qualifier_list
 	| specifier_qualifier_list abstract_declarator
 	;
 
+/* not implemented */
 abstract_declarator
 	: pointer
 	| direct_abstract_declarator
 	| pointer direct_abstract_declarator
 	;
 
+/* not implemented */
 direct_abstract_declarator
 	: '(' abstract_declarator ')'
 	| '[' ']'
@@ -439,11 +446,11 @@ initializer_list
 
 statement
 	: labeled_statement 	/** @returns LabeledStatement */
-	| compound_statement	/** @returns CompoundStatement */
-	| expression_statement	/** @returns ExpressionStatement */
+	| compound_statement	{ $$ = $1; }
+	| expression_statement	{ $$ = $1; }
 	| selection_statement	/** @returns SelectionStatement */
 	| iteration_statement	/** @returns IterationStatement */
-	| jump_statement		/** @returns JumpStatement */
+	| jump_statement		{ $$ = $1; }
 	;
 
 labeled_statement
@@ -499,13 +506,13 @@ program: translation_unit { root = $1; }
 	;
 
 translation_unit
-	: external_declaration { $$ = new TranslationUnit(); $$->statements.push_back($<statement>1); }
-	| translation_unit external_declaration { $1->statements.push_back($<statement>2); $$ = $1; }
+	: external_declaration 					{ $$ = new TranslationUnit(); $$->statements.push_back($1); }
+	| translation_unit external_declaration { $1->statements.push_back($2); $$ = $1; }
 	;
 
 external_declaration
-	: function_definition
-	| declaration
+	: function_definition 	{ $$ = $1; }
+	| declaration			{ $$ = $1; }
 	;
 
 function_definition
