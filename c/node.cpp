@@ -711,9 +711,28 @@ std::string ParameterDeclaration::toPrettyCode(){
 }
 
 std::string LabeledStatement::toStdString(){
-	std::string result = "<LabeledStatement>";
+	std::string result = "<LabeledStatement ";
+
+	if(identifier != ""){
+		result += " identifier='" + identifier + "'>";
+		result += statement->toStdString();
+	}
+	if(token == DEFAULT){
+		result += " token= '" + std::to_string(token) + "'>";	
+		result += statement->toStdString();
+	}
+	if(token == CASE){
+		result += " token= '" + std::to_string(token) + "'>";	
+		result += constant_expression->toPrettyCode();
+		result += statement->toStdString();
+	}
+
 	result += "</LabeledStatement>";
 	return result;
+}
+
+std::string LabeledStatement::toPrettyCode(){
+
 }
 
 std::string CompoundStatement::toStdString(){
@@ -791,15 +810,98 @@ std::string ExpressionStatement::toPrettyCode(){
 }
 
 std::string SelectionStatement::toStdString(){
-	std::string result = "<SelectionStatement>";
+	std::string result = "<SelectionStatement token= '" + std::to_string(token) + "'>";
+
+	result += "<ExpressionList>";
+	for( auto &i : expression){
+		result += i->toStdString();
+	}
+	result += "</ExpressionList>";
+
+	/*result += statement->toStdString();*/
+
+	if(token_else != -1){
+		result += " token= '" + std::to_string(token_else) + "'>";
+		/*result += statement_else->toStdString();*/
+	}
+
 	result += "</SelectionStatement>";
 	return result;
 }
+std::string SelectionStatement::toPrettyCode(){
+	
+}
 
 std::string IterationStatement::toStdString(){
-	std::string result = "<IterationStatement>";
+	std::string result = "<IterationStatement token= '" + std::to_string(token) + "'>";
+
+	if(token == WHILE){
+		result += "<ExpressionList>";
+		for(auto &i : expression){
+			result += i->toStdString();
+		}
+		result += "</ExpressionList>";
+
+		result += statement->toStdString();	
+	}
+	if(token == DO){
+		result += statement->toStdString();
+		result += " token= '" + std::to_string(token_while)+ "'";
+		result += "<ExpressionList>";
+		for(auto &i : expression){
+			result += i->toStdString();
+		}
+		result += "</ExpressionList>";		
+	}
+	
+	if(token == FOR){
+		result += expression_statement1.toStdString();
+		result += expression_statement2.toStdString();
+		if(expression.size() != 0){
+			result += "<ExpressionList>";
+			for(auto &i : expression){
+				result += i->toStdString();
+			}
+			result += "</ExpressionList>";
+		}
+		result += statement->toStdString();
+	}
+
 	result += "</IterationStatement>";
 	return result;
+}
+
+std::string IterationStatement::toPrettyCode(){
+	std::string result = "";
+
+	if(token == WHILE){
+		result += "while ";
+		for(auto &i : expression){
+			result += i->toPrettyCode();
+		}
+		result += " " + statement->toPrettyCode();
+		result += ";";
+	}
+
+	if(token == DO){
+		result += "do ";
+		result += statement->toPrettyCode();
+		result += "while ";
+		for(auto &i : expression){
+			result += i->toPrettyCode();
+		}
+		result += ";";
+	}
+	if(token == FOR){
+		result += "for ";
+		result += expression_statement1.toPrettyCode();
+		result += expression_statement2.toPrettyCode();
+	}
+
+/*	
+	| FOR '(' expression_statement expression_statement ')' statement 	
+	| FOR '(' expression_statement expression_statement expression ')' statement*/
+	
 }
 
 std::string JumpStatement::toStdString(){
@@ -808,9 +910,8 @@ std::string JumpStatement::toStdString(){
 	if(token == GOTO){
 		result += " identifier='" + identifier + "'";
 	}
-
 	result += ">";
-
+	
 	if(expression_list.size() != 0){
 		result += "<ExpressionList>";
 		for(auto &i : expression_list){
@@ -818,7 +919,7 @@ std::string JumpStatement::toStdString(){
 		}
 		result += "</ExpressionList>";
 	}
-
+	
 	result += "</JumpStatement>";
 	return result;
 }

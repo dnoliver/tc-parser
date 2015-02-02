@@ -49,6 +49,25 @@ assert "int f(int x,int y){}"
 assert "int f(int x,int y,int z){}"
 assert "int f(){int x=0;}"
 
+## SelectionStatement
+##assert "int f(){ if(1){ return; } }"
+##assert "int f(){ if(a=b){ return a; } else { return b;} }"
+
+##IF '(' expression ')' statement 					
+##	| IF '(' expression ')' statement ELSE statement
+##	| SWITCH '(' expression ')' statement 			
+
+##IterationStatement
+##assert "int f(){ while(1) { return;} }"
+##assert "int f(){ int i; for(i=0; i!=2; ){} }"
+##assert "int f(){ int i; for(i=0; i!=2; i++){} }"
+
+
+##WHILE '(' expression ')' statement 
+##DO statement WHILE '(' expression ')' ';'
+##FOR '(' expression_statement expression_statement ')' statement 
+##FOR '(' expression_statement expression_statement expression ')' statement
+
 ## jump statement
 assert "int f(){ return; }"
 assert "int f(){ break; }"

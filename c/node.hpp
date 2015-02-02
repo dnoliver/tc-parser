@@ -363,7 +363,24 @@ typedef std::vector<Declaration*> DeclarationList;
 
 class LabeledStatement : public Statement {
 	public:
+		std::string identifier;
+		int token = -1;
+		Expression *constant_expression = NULL;
+		Statement *statement = NULL;
+
+		LabeledStatement(std::string identifier, Statement *statement) :
+			identifier(identifier),
+			statement(statement){}
+		LabeledStatement(int token, Expression *constant_expression, Statement *statement) :
+			token(token),
+			constant_expression(constant_expression),
+			statement(statement){}
+		LabeledStatement(int token, Statement *statement) :
+			token(token),
+			statement(statement){}
+
 		virtual std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class CompoundStatement : public Statement {
@@ -399,12 +416,56 @@ class ExpressionStatement : public Statement {
 
 class SelectionStatement : public Statement {
 	public:
+		int token =-1, token_else = -1;
+		Statement *statement = NULL, *statement_else = NULL;
+		ExpressionList expression;
+
+		SelectionStatement(int token, ExpressionList expression, Statement *statement) :
+			token(token),
+			expression(expression),
+			statement(statement) {}
+		SelectionStatement(int token, ExpressionList expression, Statement *statement, int token_else, Statement *statement_else) :
+			token(token),
+			expression(expression),
+			statement(statement),
+			token_else(token_else),
+			statement_else(statement_else) {}
+
 		virtual std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class IterationStatement : public Statement {
 	public:
+		int token = -1, token_while = -1;
+		ExpressionList expression;
+		Statement *statement = NULL;
+		ExpressionStatement expression_statement1, expression_statement2;
+
+		IterationStatement(int token, ExpressionList expression, Statement *statement) :
+			token(token),
+			expression(expression),
+			statement(statement) {}
+		IterationStatement(int token, Statement *statement, int token_while, ExpressionList expression) :
+			token(token),
+			statement(statement),
+			token_while(token_while),
+			expression(expression) {}
+		IterationStatement(int token, ExpressionStatement expression_statement1, ExpressionStatement expression_statement2, Statement *statement) :
+			token(token),
+			expression_statement1(expression_statement1),
+			expression_statement2(expression_statement2),
+			statement(statement) {}
+		IterationStatement(int token, ExpressionStatement expression_statement1, ExpressionStatement expression_statement2, 
+			ExpressionList expression, Statement *statement) :
+			token(token),
+			expression_statement1(expression_statement1),
+			expression_statement2(expression_statement2),
+			expression(expression),
+			statement(statement) {}
+
 		virtual std::string toStdString();
+		std::string toPrettyCode();
 };
 
 class JumpStatement : public Statement {

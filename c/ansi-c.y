@@ -19,6 +19,8 @@
 	TranslationUnit *translation_unit;
 	Statement *statement;
 	StatementList *statement_list;
+	SelectionStatement *selection_statement;
+	IterationStatement *iteration_statement;
 	Declaration *declaration;
 	ParameterDeclaration *parameter_declaration;
 	ParameterDeclarationList *parameter_list;
@@ -30,6 +32,7 @@
 	InitDeclarator *init_declarator;
 	Initializer *initializer;
 	Declarator *declarator;
+	LabeledStatement *labeled_statement;
 	
 	Expression *expression;
 	ExpressionList *expression_list;
@@ -45,6 +48,8 @@
 	DeclarationList *declaration_list;
 	CompoundStatement *compound_statement;
 	TypeQualifierList *type_qualifier_list;
+
+	
 	
 	std::string *string;
 	IdentifierList *identifier_list;
@@ -98,6 +103,9 @@
 %type <op> assignment_operator
 %type <initializer> initializer
 %type <expression_statement> expression_statement
+%type <selection_statement> selection_statement
+%type <iteration_statement> iteration_statement
+%type <labeled_statement> labeled_statement
 
 %start program
 %%
@@ -110,7 +118,7 @@ primary_expression
 	;
 
 postfix_expression
-	: primary_expression { $$ = $1; }
+	: primary_expression 									{ $$ = $1; }
 	| postfix_expression '[' expression ']'					{ $$ = new ArrayAccess($1,*$3); }
 	| postfix_expression '(' ')'							{ $$ = new FunctionCall($1); }
 	| postfix_expression '(' argument_expression_list ')'	{ $$ = new FunctionCall($1,*$3); }
@@ -231,8 +239,8 @@ assignment_operator
 	;
 
 expression
-	: assignment_expression { $$ = new ExpressionList(); $$->push_back($1); }
-	| expression ',' assignment_expression { $1->push_back($3); $$ = $1; }
+	: assignment_expression 				{ $$ = new ExpressionList(); $$->push_back($1); }
+	| expression ',' assignment_expression 	{ $1->push_back($3); $$ = $1; }
 	;
 
 constant_expression
@@ -240,8 +248,8 @@ constant_expression
 	;
 
 declaration
-	: declaration_specifiers ';' { $$ = new Declaration(*$1); }
-	| declaration_specifiers init_declarator_list ';' { $$ = new Declaration(*$1,*$2); }
+	: declaration_specifiers ';' 						{ $$ = new Declaration(*$1); }
+	| declaration_specifiers init_declarator_list ';' 	{ $$ = new Declaration(*$1,*$2); }
 	;
 
 declaration_specifiers
@@ -254,13 +262,13 @@ declaration_specifiers
 	;
 
 init_declarator_list
-	: init_declarator { $$ = new InitDeclaratorList(); $$->push_back($1); }
-	| init_declarator_list ',' init_declarator { $1->push_back($3), $$ = $1; }
+	: init_declarator 							{ $$ = new InitDeclaratorList(); $$->push_back($1); }
+	| init_declarator_list ',' init_declarator 	{ $1->push_back($3), $$ = $1; }
 	;
 
 init_declarator
-	: declarator { $$ = new InitDeclarator($1); }
-	| declarator '=' initializer { $$ = new InitDeclarator($1,$3); }
+	: declarator 					{ $$ = new InitDeclarator($1); }
+	| declarator '=' initializer 	{ $$ = new InitDeclarator($1,$3); }
 	;
 
 storage_class_specifier
@@ -388,8 +396,8 @@ parameter_type_list
 	;
 
 parameter_list
-	: parameter_declaration { $$ = new ParameterDeclarationList(); $$->push_back($1); }
-	| parameter_list ',' parameter_declaration { $1->push_back($3); $$ = $1; }
+	: parameter_declaration 					{ $$ = new ParameterDeclarationList(); $$->push_back($1); }
+	| parameter_list ',' parameter_declaration 	{ $1->push_back($3); $$ = $1; }
 	;
 
 parameter_declaration
@@ -447,9 +455,9 @@ statement
 	;
 
 labeled_statement
-	: IDENTIFIER ':' statement
-	| CASE constant_expression ':' statement
-	| DEFAULT ':' statement
+	: IDENTIFIER ':' statement 					{ $$ = new LabeledStatement(*$1, $3); delete $1;}
+	| CASE constant_expression ':' statement 	{ $$ = new LabeledStatement(CASE, $2, $4); }
+	| DEFAULT ':' statement 					{ $$ = new LabeledStatement(DEFAULT, $3); }
 	;
 
 compound_statement
@@ -475,16 +483,16 @@ expression_statement
 	;
 
 selection_statement
-	: IF '(' expression ')' statement
-	| IF '(' expression ')' statement ELSE statement
-	| SWITCH '(' expression ')' statement
+	: IF '(' expression ')' statement 					{ $$ = new SelectionStatement(IF, *$3, $5 ); delete $3; }
+	| IF '(' expression ')' statement ELSE statement 	{ $$ = new SelectionStatement(IF, *$3, $5, ELSE, $7); delete $3; }
+	| SWITCH '(' expression ')' statement 				{ $$ = new SelectionStatement(SWITCH, *$3, $5); delete $3; }
 	;
 
 iteration_statement
-	: WHILE '(' expression ')' statement
-	| DO statement WHILE '(' expression ')' ';'
-	| FOR '(' expression_statement expression_statement ')' statement
-	| FOR '(' expression_statement expression_statement expression ')' statement
+	: WHILE '(' expression ')' statement 											{ $$ = new IterationStatement(WHILE, *$3, $5); delete $3; }
+	| DO statement WHILE '(' expression ')' ';'										{ $$ = new IterationStatement(DO, $2, WHILE, *$5); delete $5; }
+	| FOR '(' expression_statement expression_statement ')' statement 				{ $$ = new IterationStatement(FOR, *$3, *$4, $6); delete $3,$4;}
+	| FOR '(' expression_statement expression_statement expression ')' statement 	{ $$ = new IterationStatement(FOR, *$3, *$4, *$5, $7); }
 	;
 
 jump_statement
@@ -499,7 +507,7 @@ program: translation_unit { root = $1; }
 	;
 
 translation_unit
-	: external_declaration { $$ = new TranslationUnit(); $$->statements.push_back($<statement>1); }
+	: external_declaration 					{ $$ = new TranslationUnit(); $$->statements.push_back($<statement>1); }
 	| translation_unit external_declaration { $1->statements.push_back($<statement>2); $$ = $1; }
 	;
 
@@ -510,9 +518,9 @@ external_declaration
 
 function_definition
 	: declaration_specifiers declarator declaration_list compound_statement { $$ = new FunctionDefinition(*$1,$2,*$3,$4); }
-	| declaration_specifiers declarator compound_statement { $$ = new FunctionDefinition(*$1,$2,$3); }
-	| declarator declaration_list compound_statement { $$ = new FunctionDefinition($1,*$2,$3); }
-	| declarator compound_statement { $$ = new FunctionDefinition($1,$2); }
+	| declaration_specifiers declarator compound_statement 					{ $$ = new FunctionDefinition(*$1,$2,$3); }
+	| declarator declaration_list compound_statement 						{ $$ = new FunctionDefinition($1,*$2,$3); }
+	| declarator compound_statement 										{ $$ = new FunctionDefinition($1,$2); }
 	;
 
 %%
