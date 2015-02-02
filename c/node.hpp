@@ -415,16 +415,33 @@ class ExpressionStatement : public Statement {
 };
 
 class SelectionStatement : public Statement {
+	
+};
+
+class IfSelectionStatement : public SelectionStatement {
 	public:
-		int token =-1, token_else = -1;
-		Statement *statement = NULL, *statement_else = NULL;
+
+		int token;
+		Statement *statement = NULL;
 		ExpressionList expression;
 
-		SelectionStatement(int token, ExpressionList expression, Statement *statement) :
+		IfSelectionStatement(int token, ExpressionList expression, Statement *statement) :
 			token(token),
 			expression(expression),
 			statement(statement) {}
-		SelectionStatement(int token, ExpressionList expression, Statement *statement, int token_else, Statement *statement_else) :
+
+		virtual std::string toStdString();
+		std::string toPrettyCode();
+};
+
+/*Revisar, el XML no se imprime ordenado*/
+class IfElseSelectionStatement : public SelectionStatement {
+	public:
+		int token, token_else;
+		Statement *statement = NULL, *statement_else = NULL;
+		ExpressionList expression;
+
+		IfElseSelectionStatement(int token, ExpressionList expression, Statement *statement, int token_else, Statement *statement_else) :
 			token(token),
 			expression(expression),
 			statement(statement),
@@ -435,28 +452,78 @@ class SelectionStatement : public Statement {
 		std::string toPrettyCode();
 };
 
-class IterationStatement : public Statement {
-	public:
-		int token = -1, token_while = -1;
-		ExpressionList expression;
+class SwitchSelectionStatement : public SelectionStatement {
+	public: 
+		int token;
 		Statement *statement = NULL;
-		ExpressionStatement expression_statement1, expression_statement2;
+		ExpressionList expression;
 
-		IterationStatement(int token, ExpressionList expression, Statement *statement) :
+		SwitchSelectionStatement(int token, ExpressionList expression, Statement *statement) :
 			token(token),
 			expression(expression),
 			statement(statement) {}
-		IterationStatement(int token, Statement *statement, int token_while, ExpressionList expression) :
+
+		virtual std::string toStdString();
+		std::string toPrettyCode();
+};
+
+class IterationStatement : public Statement {
+};
+/*Revisar, el XML no se imprime ordenado*/
+class WhileIterationStatement : public IterationStatement {
+	public:
+		int token;
+		ExpressionList expression;
+		Statement *statement = NULL;
+
+		WhileIterationStatement(int token, ExpressionList expression, Statement *statement) : 
+			token(token),
+			expression(expression),
+			statement(statement) {}
+
+		virtual std::string toStdString();
+		std::string toPrettyCode();
+};
+/*Revisar, el XML no se imprime ordenado*/
+class DoWhileIterationStatement : public IterationStatement {
+	public:
+		int token, token_while;
+		Statement *statement = NULL;
+		ExpressionList expression;
+
+		DoWhileIterationStatement(int token, Statement *statement, int token_while, ExpressionList expression) : 
 			token(token),
 			statement(statement),
 			token_while(token_while),
 			expression(expression) {}
-		IterationStatement(int token, ExpressionStatement expression_statement1, ExpressionStatement expression_statement2, Statement *statement) :
+
+		virtual std::string toStdString();
+		std::string toPrettyCode();
+};
+class ForSimpleIterationStatement : public IterationStatement {
+	public:
+		int token;
+		ExpressionStatement expression_statement1, expression_statement2;
+		Statement *statement = NULL;
+
+		ForSimpleIterationStatement(int token, ExpressionStatement expression_statement1, ExpressionStatement expression_statement2, Statement *statement) :
 			token(token),
 			expression_statement1(expression_statement1),
 			expression_statement2(expression_statement2),
 			statement(statement) {}
-		IterationStatement(int token, ExpressionStatement expression_statement1, ExpressionStatement expression_statement2, 
+
+		virtual std::string toStdString();
+		std::string toPrettyCode();
+};
+
+class ForCompoundIterationStatement : public IterationStatement {
+	public:
+		int token;
+		ExpressionStatement expression_statement1, expression_statement2;
+		ExpressionList expression;
+		Statement *statement = NULL;
+		
+		ForCompoundIterationStatement(int token, ExpressionStatement expression_statement1, ExpressionStatement expression_statement2, 
 			ExpressionList expression, Statement *statement) :
 			token(token),
 			expression_statement1(expression_statement1),

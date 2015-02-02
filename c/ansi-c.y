@@ -483,16 +483,16 @@ expression_statement
 	;
 
 selection_statement
-	: IF '(' expression ')' statement 					{ $$ = new SelectionStatement(IF, *$3, $5 ); delete $3; }
-	| IF '(' expression ')' statement ELSE statement 	{ $$ = new SelectionStatement(IF, *$3, $5, ELSE, $7); delete $3; }
-	| SWITCH '(' expression ')' statement 				{ $$ = new SelectionStatement(SWITCH, *$3, $5); delete $3; }
+	: IF '(' expression ')' statement 					{ $$ = new IfSelectionStatement(IF, *$3, $5 ); delete $3; }
+	| IF '(' expression ')' statement ELSE statement 	{ $$ = new IfElseSelectionStatement(IF, *$3, $5, ELSE, $7); delete $3; }
+	| SWITCH '(' expression ')' statement 				{ $$ = new SwitchSelectionStatement(SWITCH, *$3, $5); delete $3; }
 	;
 
 iteration_statement
-	: WHILE '(' expression ')' statement 											{ $$ = new IterationStatement(WHILE, *$3, $5); delete $3; }
-	| DO statement WHILE '(' expression ')' ';'										{ $$ = new IterationStatement(DO, $2, WHILE, *$5); delete $5; }
-	| FOR '(' expression_statement expression_statement ')' statement 				{ $$ = new IterationStatement(FOR, *$3, *$4, $6); delete $3,$4;}
-	| FOR '(' expression_statement expression_statement expression ')' statement 	{ $$ = new IterationStatement(FOR, *$3, *$4, *$5, $7); }
+	: WHILE '(' expression ')' statement 											{ $$ = new WhileIterationStatement(WHILE, *$3, $5);}
+	| DO statement WHILE '(' expression ')' ';'										{ $$ = new DoWhileIterationStatement(DO, $2, WHILE, *$5);}
+	| FOR '(' expression_statement expression_statement ')' statement 				{ $$ = new ForSimpleIterationStatement(FOR, *$3, *$4, $6);}
+	| FOR '(' expression_statement expression_statement expression ')' statement 	{ $$ = new ForCompoundIterationStatement(FOR,*$3,*$4,*$5,$7);}
 	;
 
 jump_statement

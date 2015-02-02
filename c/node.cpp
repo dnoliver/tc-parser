@@ -809,8 +809,8 @@ std::string ExpressionStatement::toPrettyCode(){
 	return result;
 }
 
-std::string SelectionStatement::toStdString(){
-	std::string result = "<SelectionStatement token= '" + std::to_string(token) + "'>";
+std::string IfSelectionStatement::toStdString() {
+	std::string result = "<IfSelectionStatement token= '" + std::to_string(token) + "'>";
 
 	result += "<ExpressionList>";
 	for( auto &i : expression){
@@ -818,92 +818,180 @@ std::string SelectionStatement::toStdString(){
 	}
 	result += "</ExpressionList>";
 
-	/*result += statement->toStdString();*/
+	result += statement->toStdString();
 
-	if(token_else != -1){
-		result += " token= '" + std::to_string(token_else) + "'>";
-		/*result += statement_else->toStdString();*/
-	}
-
-	result += "</SelectionStatement>";
+	result += "</IfSelectionStatement>";
 	return result;
 }
-std::string SelectionStatement::toPrettyCode(){
-	
+
+std::string IfSelectionStatement::toPrettyCode() {
+	std::string result = "if ";
+
+	for( auto &i : expression){
+		result += i->toPrettyCode();
+	}
+
+	result += statement->toPrettyCode();
+
+	return result;
 }
 
-std::string IterationStatement::toStdString(){
-	std::string result = "<IterationStatement token= '" + std::to_string(token) + "'>";
+std::string IfElseSelectionStatement::toStdString() {
+	std::string result = "<IfElseSelectionStatement token= '" + std::to_string(token) + "'>";
 
-	if(token == WHILE){
-		result += "<ExpressionList>";
+	result += "<ExpressionList>";
+	for( auto &i : expression){
+		result += i->toStdString();
+	}
+	result += "</ExpressionList>";
+
+	result += statement->toStdString();
+
+	result += " token= '" + std::to_string(token_else) + "'>";
+	result += statement_else->toStdString();
+
+	result += "</IfElseSelectionStatement>";
+	return result;
+}
+std::string IfElseSelectionStatement::toPrettyCode() {
+	std::string result = "if ";
+
+	for( auto &i : expression){
+		result += i->toPrettyCode();
+	}
+
+	result += statement->toPrettyCode();
+	result += " else ";
+	result += statement_else->toPrettyCode();
+
+	return result;
+}
+
+std::string SwitchSelectionStatement::toStdString() {
+	std::string result = "<SwitchSelectionStatement token= '" + std::to_string(token) + "'>";
+
+	result += "<ExpressionList>";
+	for( auto &i : expression){
+		result += i->toStdString();
+	}
+	result += "</ExpressionList>";
+
+	result += statement->toStdString();
+
+	result += "</SwitchSelectionStatement>";
+	return result;
+}
+std::string SwitchSelectionStatement::toPrettyCode() {
+	std::string result = "switch ";
+
+	for( auto &i : expression){
+		result += i->toPrettyCode();
+	}
+
+	result += statement->toPrettyCode();
+	return result;
+}
+
+std::string WhileIterationStatement::toStdString() {
+	std::string result = "<WhileIterationStatement token= '" + std::to_string(token) + "'>";
+
+	result += "<ExpressionList>";
+	for(auto &i : expression){
+		result += i->toStdString();
+	}
+	result += "</ExpressionList>";
+
+	result += statement->toStdString();
+	
+	result += "</WhileIterationStatement>";
+	return result;
+}
+std::string WhileIterationStatement::toPrettyCode() {
+	std::string result = "while ";
+
+	for( auto &i : expression){
+		result += i->toPrettyCode();
+	}
+
+	result += statement->toPrettyCode();
+	return result;
+}
+
+std::string DoWhileIterationStatement::toStdString() {
+	std::string result = "<DoWhileIterationStatement token= '" + std::to_string(token) + "'>";
+
+	result += statement->toStdString();
+	result += " token= '" + std::to_string(token_while)+ "'";
+	result += "<ExpressionList>";
+	for(auto &i : expression){
+		result += i->toStdString();
+	}
+	result += "</ExpressionList>";		
+
+	result += "</DoWhileIterationStatement>";
+	return result;
+}
+std::string DoWhileIterationStatement::toPrettyCode() {
+	std::string result = "do ";
+
+	result += statement->toPrettyCode();
+	result += " while (";
+	for( auto &i : expression){
+		result += i->toPrettyCode();
+	}
+	result += ");";
+
+	return result;
+}
+
+std::string ForSimpleIterationStatement::toStdString() {
+	std::string result = "<ForSimpleIterationStatement token= '" + std::to_string(token) + "'>";
+
+	result += expression_statement1.toStdString();
+	result += expression_statement2.toStdString();
+	result += statement->toStdString();
+
+	result += "</ForSimpleIterationStatement>";
+	return result;
+}
+std::string ForSimpleIterationStatement::toPrettyCode() {
+	std::string result = "for ";
+
+	result += expression_statement1.toPrettyCode();
+	result += expression_statement2.toPrettyCode();
+	result += statement->toPrettyCode();
+
+	return result;
+}
+
+std::string ForCompoundIterationStatement::toStdString() {
+	std::string result = "<ForCompoundIterationStatement token= '" + std::to_string(token) + "'>";
+
+	result += expression_statement1.toStdString();
+	result += expression_statement2.toStdString();
+	result += "<ExpressionList>";
 		for(auto &i : expression){
 			result += i->toStdString();
 		}
 		result += "</ExpressionList>";
-
-		result += statement->toStdString();	
-	}
-	if(token == DO){
-		result += statement->toStdString();
-		result += " token= '" + std::to_string(token_while)+ "'";
-		result += "<ExpressionList>";
-		for(auto &i : expression){
-			result += i->toStdString();
-		}
-		result += "</ExpressionList>";		
-	}
 	
-	if(token == FOR){
-		result += expression_statement1.toStdString();
-		result += expression_statement2.toStdString();
-		if(expression.size() != 0){
-			result += "<ExpressionList>";
-			for(auto &i : expression){
-				result += i->toStdString();
-			}
-			result += "</ExpressionList>";
-		}
-		result += statement->toStdString();
-	}
+	result += statement->toStdString();
 
-	result += "</IterationStatement>";
+	result += "</ForCompoundIterationStatement>";
 	return result;
 }
+std::string ForCompoundIterationStatement::toPrettyCode() {
+	std::string result = "for ";
 
-std::string IterationStatement::toPrettyCode(){
-	std::string result = "";
-
-	if(token == WHILE){
-		result += "while ";
-		for(auto &i : expression){
+	result += expression_statement1.toPrettyCode();
+	result += expression_statement2.toPrettyCode();
+	for(auto &i : expression){
 			result += i->toPrettyCode();
 		}
-		result += " " + statement->toPrettyCode();
-		result += ";";
-	}
+	result += statement->toPrettyCode();
 
-	if(token == DO){
-		result += "do ";
-		result += statement->toPrettyCode();
-		result += "while ";
-		for(auto &i : expression){
-			result += i->toPrettyCode();
-		}
-		result += ";";
-	}
-	if(token == FOR){
-		result += "for ";
-		result += expression_statement1.toPrettyCode();
-		result += expression_statement2.toPrettyCode();
-	}
-
-/*	
-	| FOR '(' expression_statement expression_statement ')' statement 	
-	| FOR '(' expression_statement expression_statement expression ')' statement*/
-	
+	return result;
 }
-
 std::string JumpStatement::toStdString(){
 	std::string result = "<JumpStatement token='" + std::to_string(token) + "'";
 
