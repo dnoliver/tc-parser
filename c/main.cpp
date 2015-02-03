@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "node.hpp"
 #include "CodeGen.hpp"
+#include "CodeString.hpp"
 
 /*
  *  _______________________________________
@@ -39,7 +40,9 @@ int main(int argc, char **argv)
 		
 		if (PARSE_CODE != NULL){
 			/** will print pretty code */
-			std::cout << root->toPrettyCode() << std::endl;	
+			CodeBlock *context = new CodeBlock();
+			root->toPrettyCode(context);	
+			std::cout << context->toPrettyCode();
 		}
 		
 		/*

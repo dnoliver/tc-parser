@@ -1,17 +1,18 @@
-#ifndef NODE_H
-#define NODE_H
+#ifndef NODE_HPP
+#define NODE_HPP
 
 #include <iostream>
 #include <vector>
 #include <map>
 
+#include "CodeString.hpp"
 #include "CodeGen.hpp"
 
 class Node {
 	public:
 		virtual ~Node() {}
 		virtual std::string toStdString() = 0;
-		virtual std::string toPrettyCode() = 0;
+		virtual void toPrettyCode(CodeString*){ };
 		virtual std::string generateCode(CodeContext*){ return ""; };
 };
 
@@ -28,7 +29,7 @@ class Operator : public Expression {
 	
 		Operator(std::string value) : value(value) {}
 		std::string toStdString();
-		std::string toPrettyCode();
+		void toPrettyCode(CodeString*);
 		std::string generateCode(CodeContext*);
 };
 
@@ -42,7 +43,7 @@ class Identifier : public Expression {
 			
 		}
 		std::string toStdString();
-		std::string toPrettyCode();
+		void toPrettyCode(CodeString*);
 		std::string generateCode(CodeContext*);
 };
 
@@ -54,7 +55,7 @@ class Constant : public Expression {
 	
 		Constant(std::string value) : value(value){}
 		std::string toStdString();
-		std::string toPrettyCode();
+		void toPrettyCode(CodeString*);
 		std::string generateCode(CodeContext*);
 };
 
@@ -64,7 +65,8 @@ class StringLiteral : public Expression {
 	
 		StringLiteral(std::string value) : value(value){}
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 };
 
 class PrimaryExpression : public Expression {
@@ -73,8 +75,9 @@ class PrimaryExpression : public Expression {
 		PrimaryExpression(ExpressionList expression_list) : expression_list(expression_list) {}
 	
 		std::string toStdString();
-		std::string toPrettyCode();
+		
 		std::string generateCode(CodeContext*);
+		void toPrettyCode(CodeString*);
 };
 
 class PostfixOperation : public Expression {
@@ -86,7 +89,8 @@ class PostfixOperation : public Expression {
 			operand(operand), unary_operator(unary_operator) {}
 	
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 		std::string generateCode(CodeContext*);
 };
 
@@ -98,9 +102,10 @@ class ArrayAccess : public Expression {
 		ArrayAccess(Expression *postfix_expression,ExpressionList expression):
 			postfix_expression(postfix_expression),
 			expression(expression){}
-	
+		
+		void toPrettyCode(CodeString*);
 		std::string toStdString();
-		std::string toPrettyCode();
+		
 };
 
 class FunctionCall : public Expression {
@@ -114,7 +119,8 @@ class FunctionCall : public Expression {
       argument_expression_list(argument_expression_list) {}
   
     std::string toStdString();
-	std::string toPrettyCode();
+	
+	void toPrettyCode(CodeString*);
 	std::string generateCode(CodeContext*);
 };
 
@@ -127,7 +133,8 @@ class UnaryOperation : public Expression {
 			operand(operand), unary_operator(unary_operator) {}
 	
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 		std::string generateCode(CodeContext*);
 };
 
@@ -143,7 +150,7 @@ class BinaryOperation : public Expression {
 			left_operand(left_operand) {}
 			
 		virtual std::string toStdString();
-		virtual std::string toPrettyCode();
+		virtual void toPrettyCode(CodeString*);
 		virtual std::string generateCode(CodeContext*);
 };
 
@@ -169,7 +176,8 @@ class ConditionalExpression : public Expression {
 		conditional_expression(conditional_expression) {}
 	
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 		std::string generateCode(CodeContext*);
 };
 
@@ -187,7 +195,8 @@ class AssignmentExpression : public Expression {
 			assignment_expression(assignment_expression) {}
 	
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 		std::string generateCode(CodeContext*);
 };
 
@@ -199,7 +208,8 @@ class TranslationUnit : public Expression {
 	public:
 		StatementList statements;
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 		std::string generateCode(CodeContext*);
 };
 
@@ -214,7 +224,8 @@ class StorageClassSpecifier : public DeclarationSpecifier {
 			: token(token), value(value) { }
 		
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 };
 
 class TypeSpecifier : public DeclarationSpecifier {
@@ -226,7 +237,8 @@ class TypeSpecifier : public DeclarationSpecifier {
 			: token(token), value(value) {}
 		
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 };
 
 class TypeQualifier : public DeclarationSpecifier {
@@ -237,7 +249,8 @@ class TypeQualifier : public DeclarationSpecifier {
 		TypeQualifier(int token, std::string value) 
 			: token(token), value(value) {}
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 };
 
 typedef std::vector<TypeQualifier*> TypeQualifierList;
@@ -252,7 +265,8 @@ class IdentifierDeclarator : public DirectDeclarator {
 		IdentifierDeclarator(std::string identifier) : identifier(identifier) {}
 	
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 		std::string generateCode(CodeContext*);
 };
 
@@ -265,7 +279,8 @@ class ArrayDeclarator : public DirectDeclarator {
 		ArrayDeclarator(DirectDeclarator *direct_declarator, Expression *constant_expression) : 
 			direct_declarator(direct_declarator), constant_expression(constant_expression) {}
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 };
 
 class ParameterDeclaration : public Statement {
@@ -280,7 +295,8 @@ class ParameterDeclaration : public Statement {
 			declaration_specifiers(declaration_specifiers) {}
 	
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 };
 
 typedef std::vector<ParameterDeclaration*> ParameterDeclarationList;
@@ -301,7 +317,8 @@ class FunctionDeclarator : public DirectDeclarator {
 			direct_declarator(direct_declarator), parameter_type_list(parameter_type_list) {}
 		
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 		std::string generateCode(CodeContext*);
 };
 
@@ -320,7 +337,8 @@ class Pointer : public Statement {
 			child(child), type_qualifier_list(type_qualifier_list) {}
 	
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 };
 
 class PointerDeclarator : public DirectDeclarator {
@@ -335,8 +353,9 @@ class PointerDeclarator : public DirectDeclarator {
 		PointerDeclarator(Pointer *pointer, DirectDeclarator *direct_declarator) : 
 			pointer(pointer), direct_declarator(direct_declarator){}
 	
-		virtual std::string toStdString();
-		std::string toPrettyCode();
+		std::string toStdString();
+		
+		void toPrettyCode(CodeString*);
 };
 
 class NestedDeclarator : public DirectDeclarator {
@@ -345,7 +364,8 @@ class NestedDeclarator : public DirectDeclarator {
 	
 		NestedDeclarator(Declarator *declarator) : declarator(declarator) {}
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 };
 
 class Initializer : public Statement {
@@ -355,7 +375,8 @@ class Initializer : public Statement {
 		Initializer(Expression *assignment_expression) :
 			assignment_expression(assignment_expression) {}
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 		std::string generateCode(CodeContext*);
 };
 
@@ -370,7 +391,8 @@ class InitDeclarator : public Statement {
 			initializer(initializer) {}
 	
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 		std::string generateCode(CodeContext*);
 };
 
@@ -388,7 +410,8 @@ class Declaration : public Statement {
 			declaration_specifiers(declaration_specifiers), init_declarator_list(init_declarator_list) {}
 	
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 		std::string generateCode(CodeContext*);
 };
 
@@ -406,7 +429,8 @@ class CaseStatement : public LabeledStatement {
 			statement(statement) {}
 	
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 };
 
 class DefaultStatement : public LabeledStatement {
@@ -417,7 +441,8 @@ class DefaultStatement : public LabeledStatement {
 			statement(statement) {}
 	
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 };
 
 class TaggedStatement : public LabeledStatement {
@@ -430,7 +455,8 @@ class TaggedStatement : public LabeledStatement {
 			statement(statement) {}
 	
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 };
 
 class CompoundStatement : public Statement {
@@ -448,7 +474,8 @@ class CompoundStatement : public Statement {
 			statement_list(statement_list), declaration_list(declaration_list) {}
 	
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 		std::string generateCode(CodeContext*);
 };
 
@@ -462,7 +489,8 @@ class ExpressionStatement : public Statement {
         ExpressionStatement(){}
 	
 		std::string toStdString();
-		std::string toPrettyCode();
+		
+		void toPrettyCode(CodeString*);
 		std::string generateCode(CodeContext*);
 };
 
@@ -482,11 +510,12 @@ class IfSelectionStatement : public SelectionStatement {
 			expression(expression),
 			statement(statement) {}
 
-		virtual std::string toStdString();
-		std::string toPrettyCode();
+		
+		std::string toStdString();
+		
+		void toPrettyCode(CodeString*);
 };
 
-/*Revisar, el XML no se imprime ordenado*/
 class IfElseSelectionStatement : public SelectionStatement {
 	public:
 		int token, token_else;
@@ -500,8 +529,9 @@ class IfElseSelectionStatement : public SelectionStatement {
 			token_else(token_else),
 			statement_else(statement_else) {}
 
-		virtual std::string toStdString();
-		std::string toPrettyCode();
+		std::string toStdString();
+		void toPrettyCode(){}
+		void toPrettyCode(CodeString*);
 };
 
 class SwitchSelectionStatement : public SelectionStatement {
@@ -515,13 +545,13 @@ class SwitchSelectionStatement : public SelectionStatement {
 			expression(expression),
 			statement(statement) {}
 
-		virtual std::string toStdString();
-		std::string toPrettyCode();
+		std::string toStdString();
+		
+		void toPrettyCode(CodeString*);
 };
 
-class IterationStatement : public Statement {
-};
-/*Revisar, el XML no se imprime ordenado*/
+class IterationStatement : public Statement {};
+
 class WhileIterationStatement : public IterationStatement {
 	public:
 		int token;
@@ -533,10 +563,11 @@ class WhileIterationStatement : public IterationStatement {
 			expression(expression),
 			statement(statement) {}
 
-		virtual std::string toStdString();
-		std::string toPrettyCode();
+		std::string toStdString();
+		
+		void toPrettyCode(CodeString*);
 };
-/*Revisar, el XML no se imprime ordenado*/
+
 class DoWhileIterationStatement : public IterationStatement {
 	public:
 		int token, token_while;
@@ -549,34 +580,36 @@ class DoWhileIterationStatement : public IterationStatement {
 			token_while(token_while),
 			expression(expression) {}
 
-		virtual std::string toStdString();
-		std::string toPrettyCode();
+		std::string toStdString();
+		
+		void toPrettyCode(CodeString*);
 };
 
 class ForSimpleIterationStatement : public IterationStatement {
 	public:
 		int token;
-		ExpressionStatement expression_statement1, expression_statement2;
+		ExpressionStatement *expression_statement1, *expression_statement2;
 		Statement *statement = NULL;
 
-		ForSimpleIterationStatement(int token, ExpressionStatement expression_statement1, ExpressionStatement expression_statement2, Statement *statement) :
+		ForSimpleIterationStatement(int token, ExpressionStatement *expression_statement1, ExpressionStatement *expression_statement2, Statement *statement) :
 			token(token),
 			expression_statement1(expression_statement1),
 			expression_statement2(expression_statement2),
 			statement(statement) {}
 
-		virtual std::string toStdString();
-		std::string toPrettyCode();
+		std::string toStdString();
+		
+		void toPrettyCode(CodeString*);
 };
 
 class ForCompoundIterationStatement : public IterationStatement {
 	public:
 		int token;
-		ExpressionStatement expression_statement1, expression_statement2;
+		ExpressionStatement *expression_statement1, *expression_statement2;
 		ExpressionList expression;
 		Statement *statement = NULL;
 		
-		ForCompoundIterationStatement(int token, ExpressionStatement expression_statement1, ExpressionStatement expression_statement2, 
+		ForCompoundIterationStatement(int token, ExpressionStatement *expression_statement1, ExpressionStatement *expression_statement2, 
 			ExpressionList expression, Statement *statement) :
 			token(token),
 			expression_statement1(expression_statement1),
@@ -584,8 +617,9 @@ class ForCompoundIterationStatement : public IterationStatement {
 			expression(expression),
 			statement(statement) {}
 
-		virtual std::string toStdString();
-		std::string toPrettyCode();
+		std::string toStdString();
+		
+		void toPrettyCode(CodeString*);
 };
 
 class JumpStatement : public Statement {
@@ -603,7 +637,7 @@ class JumpStatement : public Statement {
 			expression_list(expression_list) {}
 	
 		virtual std::string toStdString();
-		std::string toPrettyCode();
+		void toPrettyCode(CodeString*);
 };
 
 class FunctionDefinition : public Statement {
@@ -629,8 +663,8 @@ class FunctionDefinition : public Statement {
 			declaration_specifier_list(declaration_specifier_list), declarator(declarator), compound_statement(compound_statement) {}
 		
 		std::string toStdString();
-		std::string toPrettyCode();
+		void toPrettyCode(CodeString*);
 		std::string generateCode(CodeContext*);
 };
 
-#endif /* NODE_H */
+#endif /* NODE_HPP */

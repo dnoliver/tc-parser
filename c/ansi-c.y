@@ -459,8 +459,8 @@ statement
 	: labeled_statement 	/** @returns LabeledStatement */
 	| compound_statement	{ $$ = $1; }
 	| expression_statement	{ $$ = $1; }
-	| selection_statement	/** @returns SelectionStatement */
-	| iteration_statement	/** @returns IterationStatement */
+	| selection_statement	{ $$ = $1; }
+	| iteration_statement	{ $$ = $1; }
 	| jump_statement		{ $$ = $1; }
 	;
 
@@ -501,8 +501,8 @@ selection_statement
 iteration_statement
 	: WHILE '(' expression ')' statement 											{ $$ = new WhileIterationStatement(WHILE, *$3, $5);}
 	| DO statement WHILE '(' expression ')' ';'										{ $$ = new DoWhileIterationStatement(DO, $2, WHILE, *$5);}
-	| FOR '(' expression_statement expression_statement ')' statement 				{ $$ = new ForSimpleIterationStatement(FOR, *$3, *$4, $6);}
-	| FOR '(' expression_statement expression_statement expression ')' statement 	{ $$ = new ForCompoundIterationStatement(FOR,*$3,*$4,*$5,$7);}
+	| FOR '(' expression_statement expression_statement ')' statement 				{ $$ = new ForSimpleIterationStatement(FOR, $3, $4, $6);}
+	| FOR '(' expression_statement expression_statement expression ')' statement 	{ $$ = new ForCompoundIterationStatement(FOR,$3,$4,*$5,$7);}
 	;
 
 jump_statement

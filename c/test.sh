@@ -11,19 +11,19 @@ function assert {
 	echo
 	#(echo $1 | PARSE_SIMBOLS=TRUE ./parser | grep "<.*>" | xmllint --format -) || exit 1
 	#echo
-	(echo $1 | GENERATE_CODE=TRUE ./parser ) || exit 1
-	echo
+	#(echo $1 | GENERATE_CODE=TRUE ./parser ) || exit 1
+	#echo
 }
 
 function assertFile {
 	(cat $1 | PARSE_CODE=TRUE ./parser ) || exit 1
-	echo
-	(cat $1 | PARSE_AST=TRUE ./parser | grep "<.*>" | xmllint --format -) || exit 1
-	echo
+	#echo
+	#(cat $1 | PARSE_AST=TRUE ./parser | grep "<.*>" | xmllint --format -) || exit 1
+	#echo
 	#(cat $1 | PARSE_SIMBOLS=TRUE ./parser | grep "<.*>" | xmllint --format -) || exit 1
 	#echo
-	(cat $1 | GENERATE_CODE=TRUE ./parser ) || exit 1
-	echo
+	#(cat $1 | GENERATE_CODE=TRUE ./parser ) || exit 1
+	#echo
 }
 
 
