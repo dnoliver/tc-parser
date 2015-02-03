@@ -13,7 +13,6 @@ extern "C" int yywrap() { }
 [a-zA-Z_][a-zA-Z0-9_]*  SAVE_TOKEN; return TIDENTIFIER;
 [0-9]+\.[0-9]*          SAVE_TOKEN; return TDOUBLE;
 [0-9]+                  SAVE_TOKEN; return TINTEGER;
-";"                     return TOKEN(TSCOLON);
 "="                     return TOKEN(TEQUAL);
 "=="                    return TOKEN(TCEQ);
 "!="                    return TOKEN(TCNE);

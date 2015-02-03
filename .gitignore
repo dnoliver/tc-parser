@@ -27,3 +27,9 @@
 *.i*86
 *.x86_64
 *.hex
+
+# files
+ansi-c.tab.cpp
+ansi-c.tab.hpp
+lex.yy.cpp
+parser

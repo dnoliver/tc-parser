@@ -1,6 +1,6 @@
 all: parser
 	
-parser: lex.yy.cpp ansi-c.tab.cpp main.cpp node.hpp node.cpp
+parser: lex.yy.cpp ansi-c.tab.cpp main.cpp node.hpp node.cpp CodeGen.cpp
 	g++ -std=c++11 $^ -o $@
 
 lex.yy.cpp: ansi-c.l

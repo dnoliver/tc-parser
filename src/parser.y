@@ -1,6 +1,5 @@
 %{
     #include "node.h"
-    #include <stdio.h>
     NBlock *programBlock; /* the top level root node of our final AST */
 
     extern int yylex();
@@ -27,7 +26,7 @@
  */
 %token <string> TIDENTIFIER TINTEGER TDOUBLE
 %token <token> TCEQ TCNE TCLT TCLE TCGT TCGE TEQUAL
-%token <token> TLPAREN TRPAREN TLBRACE TRBRACE TCOMMA TDOT TSCOLON
+%token <token> TLPAREN TRPAREN TLBRACE TRBRACE TCOMMA TDOT
 %token <token> TPLUS TMINUS TMUL TDIV
 
 /* Define the type of node our nonterminal symbols represent.
@@ -66,8 +65,8 @@ block : TLBRACE stmts TRBRACE { $$ = $2; }
       | TLBRACE TRBRACE { $$ = new NBlock(); }
       ;
 
-var_decl : ident ident TSCOLON { $$ = new NVariableDeclaration(*$1, *$2); }
-         | ident ident TEQUAL expr TSCOLON { $$ = new NVariableDeclaration(*$1, *$2, $4); }
+var_decl : ident ident { $$ = new NVariableDeclaration(*$1, *$2); }
+         | ident ident TEQUAL expr { $$ = new NVariableDeclaration(*$1, *$2, $4); }
          ;
         
 func_decl : ident ident TLPAREN func_decl_args TRPAREN block 

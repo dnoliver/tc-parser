@@ -1,6 +1,18 @@
 #include "node.hpp"
 #include "ansi-c.tab.hpp"
 
+int INDENTATION = 0;
+
+std::string indent(std::string text){
+	std::string result = "";
+	for(int i = 0; i < INDENTATION; i++){
+		result += "\t";
+	}
+	result += text;
+	
+	return result;
+};
+
 std::string TranslationUnit::toStdString(){
 	std::string result = "<TranslationUnit>";
 	
@@ -25,11 +37,22 @@ std::string TranslationUnit::toPrettyCode(){
 		int size = statements.size();
 		for ( auto &i : statements) {
 			result += i->toPrettyCode();
-			result += --size == 0? "":"\n";
+			result += --size == 0? "":"\n\n";
 		}
 	}
 	
 	return result;
+}
+
+std::string TranslationUnit::generateCode(CodeContext *context){
+	if(statements.size() != 0){
+		int size = statements.size();
+		for ( auto &i : statements) {
+			i->generateCode(context);
+		}
+	}
+	
+	return "";
 }
 
 std::string StorageClassSpecifier::toStdString(){
@@ -59,8 +82,8 @@ std::string TypeQualifier::toPrettyCode(){
 	return value;
 }
 
-std::string Declarator::toStdString(){
-	std::string result = "<Declarator>";
+std::string PointerDeclarator::toStdString(){
+	std::string result = "<PointerDeclarator>";
 	
 	if(pointer != NULL){
 		result += pointer->toStdString();	
@@ -70,12 +93,12 @@ std::string Declarator::toStdString(){
 		result += direct_declarator->toStdString();	
 	}
 	
-	result += "</Declarator>";
+	result += "</PointerDeclarator>";
 	
 	return result;
 }
 
-std::string Declarator::toPrettyCode(){
+std::string PointerDeclarator::toPrettyCode(){
 	std::string result = "";
 	
 	if(pointer != NULL){
@@ -90,12 +113,19 @@ std::string Declarator::toPrettyCode(){
 }
 
 std::string IdentifierDeclarator::toStdString(){
-	std::string result = "<IdentifierDeclarator identifier='" + identifier + "'></IdentifierDeclarator>";
+	std::string result = "<IdentifierDeclarator>";	
+	result += identifier;
+	result += "</IdentifierDeclarator>";
 	
 	return result;
 }
 
 std::string IdentifierDeclarator::toPrettyCode(){
+	return identifier;
+}
+
+std::string IdentifierDeclarator::generateCode(CodeContext *context){
+	/* TODO: declare in symbol table*/
 	return identifier;
 }
 
@@ -108,12 +138,37 @@ std::string Identifier::toPrettyCode(){
 	return value;
 }
 
+std::string Identifier::generateCode(CodeContext* context){
+	return value;
+}
+
 std::string Operator::toStdString(){
-	std::string result = "<Operator value='" + value + "'></Operator>";
+	
+	std::string result = "<Operator>";
+	
+	std::stringstream dst;
+    for (char ch : value) {
+        switch (ch) {
+            case '&': dst << "&amp;"; break;
+            case '\'': dst << "&apos;"; break;
+            case '"': dst << "&quot;"; break;
+            case '<': dst << "&lt;"; break;
+            case '>': dst << "&gt;"; break;
+            default: dst << ch; break;
+        }
+    }
+	
+	result += dst.str();
+	
+	result += "</Operator>";
 	return result;
 }
 
 std::string Operator::toPrettyCode(){
+	return value;
+}
+
+std::string Operator::generateCode(CodeContext* context){
 	return value;
 }
 
@@ -124,6 +179,12 @@ std::string Constant::toStdString(){
 
 std::string Constant::toPrettyCode(){
 	return value;
+}
+
+std::string Constant::generateCode(CodeContext *context){
+	std::string ret = context->new_temp();
+	context->buffer << ret << " = " << value << "\n";
+	return ret;
 }
 
 std::string StringLiteral::toStdString(){
@@ -165,6 +226,18 @@ std::string PrimaryExpression::toPrettyCode(){
     return result;
 }
 
+std::string PrimaryExpression::generateCode(CodeContext* context){
+	std::string result = "";
+	
+	if(expression_list.size() != 0){
+		for( auto &i : expression_list ){
+			result += i->generateCode(context);
+		}
+	}
+
+    return result;
+}
+
 std::string PostfixOperation::toStdString(){
     std::string result = "<PostfixOperation>";
 
@@ -190,6 +263,25 @@ std::string PostfixOperation::toPrettyCode(){
 	if(unary_operator != NULL){
 		result += unary_operator->toPrettyCode();
 	}
+    return result;
+}
+
+std::string PostfixOperation::generateCode(CodeContext *context){
+    std::string result = "";
+	std::string tmp = "";
+	std::string op = "";
+
+    if(operand != NULL){
+        tmp = operand->generateCode(context);
+    }
+	
+	if(unary_operator != NULL){
+		op = unary_operator->generateCode(context);
+	}
+	
+	result = context->new_temp();
+	context->buffer << result << " = " << op << " " << tmp << "\n";
+	
     return result;
 }
 
@@ -272,6 +364,32 @@ std::string FunctionCall::toPrettyCode(){
 	return result;
 }
 
+std::string FunctionCall::generateCode(CodeContext* context){
+	std::string result = "";
+
+	std::vector<std::string> params;
+	
+	if(argument_expression_list.size() != 0){
+		
+		for( auto &i : argument_expression_list){
+	  		params.push_back(i->generateCode(context));
+		}
+	}
+	
+	if(postifx_expression != NULL){
+		result = postifx_expression->generateCode(context);
+		
+		for( std::string a : params){
+	  		context->buffer << "PushParam " << a << "\n";
+		}
+		
+		context->buffer << "LCall " << result << "\n";
+		context->buffer << "PopParams\n";
+	}
+
+	return result;
+}
+
 std::string UnaryOperation::toStdString(){
     std::string result = "<UnaryOperation>";
 
@@ -297,6 +415,25 @@ std::string UnaryOperation::toPrettyCode(){
     if(operand != NULL){
         result += operand->toPrettyCode();
     }
+
+    return result;
+}
+
+std::string UnaryOperation::generateCode(CodeContext* context){
+    std::string result = "";
+	std::string op = "";
+	std::string tmp = "";
+
+	if(unary_operator != NULL){
+		op = unary_operator->generateCode(context);
+	}
+	
+    if(operand != NULL){
+        tmp = operand->generateCode(context);
+    }
+	
+	result = context->new_temp();
+	context->buffer << result << " = " << op << " " << tmp << "\n";
 
     return result;
 }
@@ -340,6 +477,64 @@ std::string BinaryOperation::toPrettyCode(){
     return result;
 }
 
+std::string BinaryOperation::generateCode(CodeContext* context){
+	std::string tmp = "";
+	std::string left = "";
+	std::string right = "";
+	std::string op = "";
+	
+	if(left_operand != NULL){
+        left = left_operand->generateCode(context);
+    }
+	
+	if(binary_operator != NULL){
+		op = binary_operator->generateCode(context);
+	}
+
+    if(right_operand != NULL){
+        right = right_operand->generateCode(context);
+    }
+	tmp = context->new_temp();
+	context->buffer << tmp << " = " << left << " " << op << " " << right << "\n";
+
+    return tmp;
+}
+
+std::string LogicalOperation::generateCode(CodeContext* context){
+	std::string tmp = "";
+	std::string left = "";
+	std::string right = "";
+	std::string op = "";
+	
+	if(left_operand != NULL){
+        left = left_operand->generateCode(context);
+    }
+	
+	if(binary_operator != NULL){
+		op = binary_operator->generateCode(context);
+	}
+
+    if(right_operand != NULL){
+        right = right_operand->generateCode(context);
+    }
+	
+	tmp = context->new_temp();
+	std::string L1 = context->new_label();
+	std::string L2 = context->new_label();
+	std::string L3 = context->new_label();
+	
+	context->buffer << "if( " << left << " " + op + " " << right << " ) goto "<< L1 << "\n";
+	context->buffer << "goto " << L2 << "\n";
+	context->buffer << L1 << ":\n";
+	context->buffer << " " << tmp << " = " << 1 << "\n";
+	context->buffer << " " << "goto " << L3 << "\n";
+	context->buffer << L2 << ":\n";
+	context->buffer << " " << tmp << " = " << 0 << "\n";
+	context->buffer << L3 << ":\n";
+	
+    return tmp;
+}
+
 std::string ConditionalExpression::toStdString(){
     std::string result = "<ConditionalExpression>";
 
@@ -368,7 +563,7 @@ std::string ConditionalExpression::toPrettyCode(){
 
     if(logical_or_expression != NULL){
         result += logical_or_expression->toPrettyCode();
-		result += "?";
+		result += " ?";
     }
 
     if(expression.size() != 0){
@@ -383,6 +578,43 @@ std::string ConditionalExpression::toPrettyCode(){
 		result += " ";
         result += conditional_expression->toPrettyCode();
     }
+	
+    return result;
+}
+
+std::string ConditionalExpression::generateCode(CodeContext* context){
+    std::string result = "";
+	std::string temp1 = "";
+	std::string temp2 = "";
+	std::string temp3 = "";
+
+    if(logical_or_expression != NULL){
+        temp1 = logical_or_expression->generateCode(context);
+    }
+
+    if(expression.size() != 0){
+        for( auto &i : expression ) {
+            temp2 = i->generateCode(context);
+        }
+    }
+
+    if(conditional_expression != NULL){
+        temp3 = conditional_expression->generateCode(context);
+    }
+	
+	result = context->new_temp();
+	std::string L1 = context->new_label();
+	std::string L2 = context->new_label();
+	std::string L3 = context->new_label();
+	
+	context->buffer << "if( " << temp1 << " == 1 ) goto "<< L1 << "\n";
+	context->buffer << "goto " << L2 << "\n";
+	context->buffer << L1 << ":\n";
+	context->buffer << " " << result << " = " << temp2 << "\n";
+	context->buffer << " " << "goto " << L3 << "\n";
+	context->buffer << L2 << ":\n";
+	context->buffer << " " << result << " = " << temp3 << "\n";
+	context->buffer << L3 << ":\n";
 	
     return result;
 }
@@ -424,6 +656,28 @@ std::string AssignmentExpression::toPrettyCode(){
 	}
 
 	return result;
+}
+
+std::string AssignmentExpression::generateCode(CodeContext* context){
+	std::string tmp1 = "";
+	std::string op = "";
+	std::string tmp2 = "";
+	
+	if(unary_expression != NULL){
+		tmp1 = unary_expression->generateCode(context);
+	}
+
+	if(assignment_operator != NULL){
+		op = assignment_operator->generateCode(context);
+	}
+
+	if(assignment_expression != NULL){
+		tmp2 = assignment_expression->generateCode(context);
+	}
+	
+	context->buffer << tmp1 << " " << op << " " << tmp2 << "\n";
+	
+	return tmp1;
 }
 
 std::string ArrayDeclarator::toStdString(){
@@ -514,6 +768,16 @@ std::string FunctionDeclarator::toPrettyCode(){
 	return result;
 }
 
+std::string FunctionDeclarator::generateCode(CodeContext* context){
+	std::string result = "";
+	
+	if(direct_declarator != NULL){
+		result = direct_declarator->generateCode(context);	
+	}
+		
+	return result;
+}
+
 std::string NestedDeclarator::toStdString(){
 	std::string result = "<NestedDeclarator>";
 	
@@ -522,6 +786,17 @@ std::string NestedDeclarator::toStdString(){
 	}
 	
 	result += "</NestedDeclarator>";
+	return result;
+}
+
+std::string NestedDeclarator::toPrettyCode(){
+	std::string result = "(";
+	
+	if(declarator != NULL){
+		result += declarator->toPrettyCode();	
+	}
+	
+	result += ")";
 	return result;
 }
 
@@ -594,6 +869,22 @@ std::string InitDeclarator::toPrettyCode(){
 	return result;
 }
 
+std::string InitDeclarator::generateCode(CodeContext* context){
+	std::string tmp1 = "";
+	std::string tmp2 = "";
+	
+	if(declarator != NULL){
+		tmp1 = declarator->generateCode(context);	
+	}
+	
+	if(initializer != NULL){
+		tmp2 = initializer->generateCode(context);
+		context->buffer << tmp1 << " = " << tmp2 << "\n";
+	}
+	
+	return tmp1;
+}
+
 std::string Initializer::toStdString(){
     std::string result = "<Initializer>";
 
@@ -616,22 +907,32 @@ std::string Initializer::toPrettyCode(){
     return result;
 }
 
+std::string Initializer::generateCode(CodeContext *context){
+	std::string tmp = "";
+	
+    if(assignment_expression != NULL){
+        tmp = assignment_expression->generateCode(context);
+    }
+	
+	return tmp;
+}
+
 std::string Declaration::toStdString(){
 	std::string result = "<Declaration>";	
 	
 	/** Get specifiers childs std strings */
-	if(specifiers.size() != 0 ){
+	if(declaration_specifiers.size() != 0 ){
 		result += "<DeclarationSpecifierList>";
-		for ( auto &i : specifiers ) {
+		for ( auto &i : declaration_specifiers ) {
 			result += i->toStdString();
 		}
 		result += "</DeclarationSpecifierList>";	
 	}
 	
 	/** Get specifiers childs std strings */
-	if(declarators.size() != 0){
+	if(init_declarator_list.size() != 0){
 		result += "<InitDeclaratorList>";
-		for( auto &i : declarators ) {
+		for( auto &i : init_declarator_list ) {
 			result += i->toStdString();
 		}
 		result += "</InitDeclaratorList>";	
@@ -646,19 +947,19 @@ std::string Declaration::toPrettyCode(){
 	std::string result = "";	
 	
 	/** Get specifiers childs std strings */
-	if(specifiers.size() != 0 ){
-		int size = specifiers.size();
-		for ( auto &i : specifiers ) {
+	if(declaration_specifiers.size() != 0 ){
+		int size = declaration_specifiers.size();
+		for ( auto &i : declaration_specifiers ) {
 			result += i->toPrettyCode();
 			result += --size == 0? "":" ";
 		}
 	}
 	
 	/** Get specifiers childs std stringqs */
-	if(declarators.size() != 0){
+	if(init_declarator_list.size() != 0){
 		result += " ";
-		int size = declarators.size();
-		for( auto &i : declarators ) {
+		int size = init_declarator_list.size();
+		for( auto &i : init_declarator_list ) {
 			result += i->toPrettyCode();
 			result += --size == 0? "":", ";
 		}
@@ -668,6 +969,24 @@ std::string Declaration::toPrettyCode(){
 	
 	return result;
 };
+
+std::string Declaration::generateCode(CodeContext *context){
+	/** Get specifiers childs std strings */
+	if(declaration_specifiers.size() != 0 ){
+		for ( auto &i : declaration_specifiers ) {
+			i->generateCode(context);
+		}
+	}
+	
+	/** Get specifiers childs std stringqs */
+	if(init_declarator_list.size() != 0){
+		for( auto &i : init_declarator_list ) {
+			i->generateCode(context);
+		}
+	}
+	
+	return "";
+}
 
 std::string ParameterDeclaration::toStdString(){
 	std::string result = "<ParameterDeclaration>";	
@@ -710,29 +1029,89 @@ std::string ParameterDeclaration::toPrettyCode(){
 	return result;
 }
 
-std::string LabeledStatement::toStdString(){
-	std::string result = "<LabeledStatement ";
-
-	if(identifier != ""){
-		result += " identifier='" + identifier + "'>";
+std::string CaseStatement::toStdString(){
+	std::string result = "<CaseStatement>";
+	
+	if(constant_expression != NULL){
+		result += constant_expression->toStdString();
+	}
+	
+	if(statement != NULL){
 		result += statement->toStdString();
 	}
-	if(token == DEFAULT){
-		result += " token= '" + std::to_string(token) + "'>";	
-		result += statement->toStdString();
-	}
-	if(token == CASE){
-		result += " token= '" + std::to_string(token) + "'>";	
-		result += constant_expression->toPrettyCode();
-		result += statement->toStdString();
-	}
-
-	result += "</LabeledStatement>";
+	
+	result += "</CaseStatement>";
 	return result;
 }
 
-std::string LabeledStatement::toPrettyCode(){
+std::string CaseStatement::toPrettyCode(){
+	std::string result = "case";
+	
+	if(constant_expression != NULL){
+		result += " ";
+		result += constant_expression->toPrettyCode();
+		result += ":";
+	}
+	
+	if(statement != NULL){
+		result += " ";
+		result += statement->toPrettyCode();
+	}
+	
+	return result;
+}
 
+std::string DefaultStatement::toStdString(){
+	std::string result = "<DefaultStatement>";
+	
+	if(statement != NULL){
+		result += statement->toStdString();
+	}
+	
+	result += "</DefaultStatement>";
+	return result;
+}
+
+std::string DefaultStatement::toPrettyCode(){
+	std::string result = "default:";
+
+	if(statement != NULL){
+		result += " ";
+		result += statement->toPrettyCode();
+	}
+	
+	return result;
+}
+
+std::string TaggedStatement::toStdString(){
+	std::string result = "<TaggedStatement>";
+	
+	if(identifier_declarator != NULL){
+		result += identifier_declarator->toStdString();
+	}
+	
+	if(statement != NULL){
+		result += statement->toStdString();
+	}
+	
+	result += "</TaggedStatement>";
+	return result;
+}
+
+std::string TaggedStatement::toPrettyCode(){
+	std::string result = "";
+
+	if(identifier_declarator != NULL){
+		result += identifier_declarator->toPrettyCode();
+		result += ":";
+	}
+	
+	if(statement != NULL){
+		result += " ";
+		result += statement->toPrettyCode();
+	}
+	
+	return result;
 }
 
 std::string CompoundStatement::toStdString(){
@@ -759,13 +1138,14 @@ std::string CompoundStatement::toStdString(){
 }
 
 std::string CompoundStatement::toPrettyCode(){
-	std::string result = "{";
+	std::string result = indent("{");
+	INDENTATION++;
 	
     if(declaration_list.size() != 0){
 		result += "\n";
 		int size = declaration_list.size();
 		for( auto &i : declaration_list ) {
-			result += i->toPrettyCode();
+			result += indent(i->toPrettyCode());
 			result += "\n"; 
 		}
 	}
@@ -774,12 +1154,31 @@ std::string CompoundStatement::toPrettyCode(){
 		result += "\n";
 		int size = statement_list.size();
 		for( auto &i : statement_list ) {
-			result += i->toPrettyCode();
+			result += indent(i->toPrettyCode());
 			result += "\n";
 		}
 	}
 	
-	result += "}";
+	INDENTATION--;
+	result += indent("}");
+	return result;
+}
+
+std::string CompoundStatement::generateCode(CodeContext* context){
+	std::string result = "";
+	
+    if(declaration_list.size() != 0){
+		for( auto &i : declaration_list ) {
+			i->generateCode(context);
+		}
+	}
+  
+	if(statement_list.size() != 0){
+		for( auto &i : statement_list ) {
+			i->generateCode(context);
+		}
+	}
+
 	return result;
 }
 
@@ -809,6 +1208,18 @@ std::string ExpressionStatement::toPrettyCode(){
 	return result;
 }
 
+std::string ExpressionStatement::generateCode(CodeContext* context){
+	std::string result = "";
+	
+	if(expression_list.size() != 0){
+		for( auto &i : expression_list ) {
+			result = i->generateCode(context);
+		}	
+	}
+	
+	return result;
+}
+
 std::string IfSelectionStatement::toStdString() {
 	std::string result = "<IfSelectionStatement token= '" + std::to_string(token) + "'>";
 
@@ -825,50 +1236,49 @@ std::string IfSelectionStatement::toStdString() {
 }
 
 std::string IfSelectionStatement::toPrettyCode() {
-	std::string result = "if ";
-
+	std::string result = "if (";
 	for( auto &i : expression){
 		result += i->toPrettyCode();
 	}
-
+	result += ")\n";
 	result += statement->toPrettyCode();
-
+	result += "\n";
 	return result;
 }
 
 std::string IfElseSelectionStatement::toStdString() {
-	std::string result = "<IfElseSelectionStatement token= '" + std::to_string(token) + "'>";
+	std::string result = "<IfElseSelectionStatement>";
 
 	result += "<ExpressionList>";
 	for( auto &i : expression){
 		result += i->toStdString();
 	}
 	result += "</ExpressionList>";
-
 	result += statement->toStdString();
-
-	result += " token= '" + std::to_string(token_else) + "'>";
 	result += statement_else->toStdString();
-
 	result += "</IfElseSelectionStatement>";
 	return result;
 }
+
 std::string IfElseSelectionStatement::toPrettyCode() {
-	std::string result = "if ";
+	std::string result = "if (";
 
 	for( auto &i : expression){
 		result += i->toPrettyCode();
 	}
-
+	
+	result += ")\n";
 	result += statement->toPrettyCode();
-	result += " else ";
+	result += "\n";
+	result += indent("else");
+	result += "\n";
 	result += statement_else->toPrettyCode();
-
+	result += "\n";
 	return result;
 }
 
 std::string SwitchSelectionStatement::toStdString() {
-	std::string result = "<SwitchSelectionStatement token= '" + std::to_string(token) + "'>";
+	std::string result = "<SwitchSelectionStatement>";
 
 	result += "<ExpressionList>";
 	for( auto &i : expression){
@@ -882,18 +1292,18 @@ std::string SwitchSelectionStatement::toStdString() {
 	return result;
 }
 std::string SwitchSelectionStatement::toPrettyCode() {
-	std::string result = "switch ";
-
+	std::string result = "switch (";
 	for( auto &i : expression){
 		result += i->toPrettyCode();
 	}
-
+	result += ")\n";
 	result += statement->toPrettyCode();
+	result += "\n";
 	return result;
 }
 
 std::string WhileIterationStatement::toStdString() {
-	std::string result = "<WhileIterationStatement token= '" + std::to_string(token) + "'>";
+	std::string result = "<WhileIterationStatement>";
 
 	result += "<ExpressionList>";
 	for(auto &i : expression){
@@ -907,21 +1317,22 @@ std::string WhileIterationStatement::toStdString() {
 	return result;
 }
 std::string WhileIterationStatement::toPrettyCode() {
-	std::string result = "while ";
-
+	std::string result = "while (";
+	
 	for( auto &i : expression){
 		result += i->toPrettyCode();
 	}
-
+	
+	result += ")\n";
 	result += statement->toPrettyCode();
+	result += "\n";
+	
 	return result;
 }
 
 std::string DoWhileIterationStatement::toStdString() {
-	std::string result = "<DoWhileIterationStatement token= '" + std::to_string(token) + "'>";
-
+	std::string result = "<DoWhileIterationStatement>";
 	result += statement->toStdString();
-	result += " token= '" + std::to_string(token_while)+ "'";
 	result += "<ExpressionList>";
 	for(auto &i : expression){
 		result += i->toStdString();
@@ -932,20 +1343,21 @@ std::string DoWhileIterationStatement::toStdString() {
 	return result;
 }
 std::string DoWhileIterationStatement::toPrettyCode() {
-	std::string result = "do ";
+	std::string result = "do\n";
 
 	result += statement->toPrettyCode();
-	result += " while (";
+	result += "\n";
+	result += "\twhile (";
 	for( auto &i : expression){
 		result += i->toPrettyCode();
 	}
-	result += ");";
+	result += ");\n";
 
 	return result;
 }
 
 std::string ForSimpleIterationStatement::toStdString() {
-	std::string result = "<ForSimpleIterationStatement token= '" + std::to_string(token) + "'>";
+	std::string result = "<ForSimpleIterationStatement>";
 
 	result += expression_statement1.toStdString();
 	result += expression_statement2.toStdString();
@@ -957,15 +1369,17 @@ std::string ForSimpleIterationStatement::toStdString() {
 std::string ForSimpleIterationStatement::toPrettyCode() {
 	std::string result = "for ";
 
-	result += expression_statement1.toPrettyCode();
+	result += "( " + expression_statement1.toPrettyCode();
+	result += " ";
 	result += expression_statement2.toPrettyCode();
+	result += " )";
 	result += statement->toPrettyCode();
 
 	return result;
 }
 
 std::string ForCompoundIterationStatement::toStdString() {
-	std::string result = "<ForCompoundIterationStatement token= '" + std::to_string(token) + "'>";
+	std::string result = "<ForCompoundIterationStatement>";
 
 	result += expression_statement1.toStdString();
 	result += expression_statement2.toStdString();
@@ -981,24 +1395,23 @@ std::string ForCompoundIterationStatement::toStdString() {
 	return result;
 }
 std::string ForCompoundIterationStatement::toPrettyCode() {
-	std::string result = "for ";
+	std::string result = "for (";
 
 	result += expression_statement1.toPrettyCode();
+	result += " ";
 	result += expression_statement2.toPrettyCode();
+	result += " ";
 	for(auto &i : expression){
 			result += i->toPrettyCode();
 		}
+	result += " )";
+	result += "\n";
 	result += statement->toPrettyCode();
-
+	result += "\n";
 	return result;
 }
 std::string JumpStatement::toStdString(){
-	std::string result = "<JumpStatement token='" + std::to_string(token) + "'";
-
-	if(token == GOTO){
-		result += " identifier='" + identifier + "'";
-	}
-	result += ">";
+	std::string result = "<JumpStatement>";
 	
 	if(expression_list.size() != 0){
 		result += "<ExpressionList>";
@@ -1097,6 +1510,30 @@ std::string FunctionDefinition::toPrettyCode(){
 	if(compound_statement != NULL){
 		result += compound_statement->toPrettyCode();	
 	}
+	
+	return result;
+}
+
+std::string FunctionDefinition::generateCode(CodeContext* context){
+	std::string result = "";
+	
+	if(declarator != NULL){
+		result += declarator->generateCode(context);	
+	}
+	
+	context->buffer << result << ":" << "\n" << "BeginFunc\n";
+	
+	if(declaration_list.size() != 0){
+		for( auto &i : declaration_list ) {
+			i->generateCode(context);
+		}	
+	}
+
+	if(compound_statement != NULL){
+		compound_statement->generateCode(context);	
+	}
+	
+	context->buffer << "EndFunc\n\n";
 	
 	return result;
 }
