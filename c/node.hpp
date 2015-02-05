@@ -12,11 +12,12 @@ class Node {
 	public:
 		virtual ~Node() {}
 		virtual std::string toStdString() = 0;
-		virtual void toPrettyCode(CodeString*){ };
-		virtual std::string generateCode(CodeContext*){ return ""; };
+		virtual void toPrettyCode(CodeString*) = 0;
+		virtual std::string generateCode(CodeContext*) = 0;
 };
 
 class DeclarationSpecifier;
+
 typedef std::vector<DeclarationSpecifier*> DeclarationSpecifierList;
 
 class Expression : public Node {};
@@ -39,9 +40,7 @@ class Identifier : public Expression {
 	public:
 		std::string value;
 	
-		Identifier(std::string value) : value(value){
-			
-		}
+		Identifier(std::string value) : value(value){}
 		std::string toStdString();
 		void toPrettyCode(CodeString*);
 		std::string generateCode(CodeContext*);
@@ -67,6 +66,7 @@ class StringLiteral : public Expression {
 		std::string toStdString();
 		
 		void toPrettyCode(CodeString*);
+		std::string generateCode(CodeContext*);
 };
 
 class PrimaryExpression : public Expression {
@@ -105,6 +105,7 @@ class ArrayAccess : public Expression {
 		
 		void toPrettyCode(CodeString*);
 		std::string toStdString();
+		std::string generateCode(CodeContext*);
 		
 };
 
@@ -226,6 +227,7 @@ class StorageClassSpecifier : public DeclarationSpecifier {
 		std::string toStdString();
 		
 		void toPrettyCode(CodeString*);
+		std::string generateCode(CodeContext*){ return ""; }
 };
 
 class TypeSpecifier : public DeclarationSpecifier {
@@ -237,8 +239,8 @@ class TypeSpecifier : public DeclarationSpecifier {
 			: token(token), value(value) {}
 		
 		std::string toStdString();
-		
 		void toPrettyCode(CodeString*);
+		std::string generateCode(CodeContext*){ return ""; }
 };
 
 class TypeQualifier : public DeclarationSpecifier {
@@ -249,8 +251,8 @@ class TypeQualifier : public DeclarationSpecifier {
 		TypeQualifier(int token, std::string value) 
 			: token(token), value(value) {}
 		std::string toStdString();
-		
 		void toPrettyCode(CodeString*);
+		std::string generateCode(CodeContext*){ return ""; }
 };
 
 typedef std::vector<TypeQualifier*> TypeQualifierList;
@@ -278,9 +280,10 @@ class ArrayDeclarator : public DirectDeclarator {
 		ArrayDeclarator(DirectDeclarator *direct_declarator) : direct_declarator(direct_declarator) {}
 		ArrayDeclarator(DirectDeclarator *direct_declarator, Expression *constant_expression) : 
 			direct_declarator(direct_declarator), constant_expression(constant_expression) {}
-		std::string toStdString();
 		
+		std::string toStdString();
 		void toPrettyCode(CodeString*);
+		std::string generateCode(CodeContext*);
 };
 
 class ParameterDeclaration : public Statement {
@@ -295,7 +298,7 @@ class ParameterDeclaration : public Statement {
 			declaration_specifiers(declaration_specifiers) {}
 	
 		std::string toStdString();
-		
+		std::string generateCode(CodeContext*);
 		void toPrettyCode(CodeString*);
 };
 
@@ -337,7 +340,7 @@ class Pointer : public Statement {
 			child(child), type_qualifier_list(type_qualifier_list) {}
 	
 		std::string toStdString();
-		
+		std::string generateCode(CodeContext*);
 		void toPrettyCode(CodeString*);
 };
 
@@ -354,7 +357,7 @@ class PointerDeclarator : public DirectDeclarator {
 			pointer(pointer), direct_declarator(direct_declarator){}
 	
 		std::string toStdString();
-		
+		std::string generateCode(CodeContext*);
 		void toPrettyCode(CodeString*);
 };
 
@@ -363,9 +366,10 @@ class NestedDeclarator : public DirectDeclarator {
 		Declarator *declarator = NULL;
 	
 		NestedDeclarator(Declarator *declarator) : declarator(declarator) {}
-		std::string toStdString();
 		
+		std::string toStdString();
 		void toPrettyCode(CodeString*);
+		std::string generateCode(CodeContext*);
 };
 
 class Initializer : public Statement {
@@ -429,7 +433,7 @@ class CaseStatement : public LabeledStatement {
 			statement(statement) {}
 	
 		std::string toStdString();
-		
+		std::string generateCode(CodeContext*);
 		void toPrettyCode(CodeString*);
 };
 
@@ -441,21 +445,21 @@ class DefaultStatement : public LabeledStatement {
 			statement(statement) {}
 	
 		std::string toStdString();
-		
+		std::string generateCode(CodeContext*);
 		void toPrettyCode(CodeString*);
 };
 
 class TaggedStatement : public LabeledStatement {
 	public:
-		IdentifierDeclarator *identifier_declarator = NULL;
+		std::string identifier;
 		Statement *statement = NULL;
 	
-		TaggedStatement(IdentifierDeclarator *identifier_declarator, Statement *statement) :
-			identifier_declarator(identifier_declarator),
+		TaggedStatement(std::string identifier, Statement *statement) :
+			identifier(identifier),
 			statement(statement) {}
 	
 		std::string toStdString();
-		
+		std::string generateCode(CodeContext*);
 		void toPrettyCode(CodeString*);
 };
 
@@ -512,7 +516,7 @@ class IfSelectionStatement : public SelectionStatement {
 
 		
 		std::string toStdString();
-		
+		std::string generateCode(CodeContext*);
 		void toPrettyCode(CodeString*);
 };
 
@@ -530,7 +534,7 @@ class IfElseSelectionStatement : public SelectionStatement {
 			statement_else(statement_else) {}
 
 		std::string toStdString();
-		void toPrettyCode(){}
+		std::string generateCode(CodeContext*);
 		void toPrettyCode(CodeString*);
 };
 
@@ -546,7 +550,7 @@ class SwitchSelectionStatement : public SelectionStatement {
 			statement(statement) {}
 
 		std::string toStdString();
-		
+		std::string generateCode(CodeContext*);
 		void toPrettyCode(CodeString*);
 };
 
@@ -564,7 +568,7 @@ class WhileIterationStatement : public IterationStatement {
 			statement(statement) {}
 
 		std::string toStdString();
-		
+		std::string generateCode(CodeContext*);
 		void toPrettyCode(CodeString*);
 };
 
@@ -581,7 +585,7 @@ class DoWhileIterationStatement : public IterationStatement {
 			expression(expression) {}
 
 		std::string toStdString();
-		
+		std::string generateCode(CodeContext*);
 		void toPrettyCode(CodeString*);
 };
 
@@ -598,7 +602,7 @@ class ForSimpleIterationStatement : public IterationStatement {
 			statement(statement) {}
 
 		std::string toStdString();
-		
+		std::string generateCode(CodeContext*);
 		void toPrettyCode(CodeString*);
 };
 
@@ -618,7 +622,7 @@ class ForCompoundIterationStatement : public IterationStatement {
 			statement(statement) {}
 
 		std::string toStdString();
-		
+		std::string generateCode(CodeContext*);
 		void toPrettyCode(CodeString*);
 };
 
@@ -637,6 +641,7 @@ class JumpStatement : public Statement {
 			expression_list(expression_list) {}
 	
 		virtual std::string toStdString();
+		std::string generateCode(CodeContext*);
 		void toPrettyCode(CodeString*);
 };
 

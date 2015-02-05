@@ -1,6 +1,6 @@
 all: parser
 	
-parser: lex.yy.cpp ansi-c.tab.cpp main.cpp node.hpp node.cpp CodeGen.cpp CodeString.cpp
+parser: lex.yy.cpp ansi-c.tab.cpp main.cpp node.cpp CodeGen.cpp CodeString.cpp SymbolTable.cpp
 	g++ -std=c++11 $^ -o $@
 
 lex.yy.cpp: ansi-c.l
@@ -8,8 +8,6 @@ lex.yy.cpp: ansi-c.l
 
 ansi-c.tab.cpp: ansi-c.y
 	bison -d $^ -o $@
-
-ansi-c.tab.hpp: ansi-c.tab.cpp
 
 test: parser
 	@./test.sh

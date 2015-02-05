@@ -1,0 +1,1 @@
+int foo(int a, int b){return a + b;}void main(){int c;int d;foo(c, d);}

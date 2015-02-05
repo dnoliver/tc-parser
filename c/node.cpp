@@ -27,12 +27,16 @@ void TranslationUnit::toPrettyCode(CodeString* context){
 }
 
 std::string TranslationUnit::generateCode(CodeContext *context){
+	context->push_block();
+	
 	if(statements.size() != 0){
 		int size = statements.size();
 		for ( auto &i : statements) {
 			i->generateCode(context);
 		}
 	}
+	
+	context->pop_block();
 	
 	return "";
 }
@@ -91,6 +95,20 @@ void PointerDeclarator::toPrettyCode(CodeString* context){
 	}
 }
 
+std::string PointerDeclarator::generateCode(CodeContext* context){
+	std::string result = "";
+	
+	if(pointer != NULL){
+		result += pointer->generateCode(context);	
+	}
+	
+	if(direct_declarator != NULL){
+		result += direct_declarator->generateCode(context);	
+	}
+	
+	return result;
+}
+
 std::string IdentifierDeclarator::toStdString(){
 	std::string result = "<IdentifierDeclarator>";	
 	result += identifier;
@@ -104,7 +122,14 @@ void IdentifierDeclarator::toPrettyCode(CodeString* context){
 }
 
 std::string IdentifierDeclarator::generateCode(CodeContext *context){
-	/* TODO: declare in symbol table*/
+	
+	if (context->locals().find(identifier) == context->locals().end()) {
+		context->locals().emplace(identifier,new Symbol(identifier));
+	}
+	else {
+		std::cerr << identifier << " is already declared" << std::endl;	
+	}
+	
 	return identifier;
 }
 
@@ -118,6 +143,17 @@ void Identifier::toPrettyCode(CodeString* context){
 }
 
 std::string Identifier::generateCode(CodeContext* context){
+	
+	if (context->locals().find(value) != context->locals().end()) {
+		context->locals().find(value)->second->invoque();
+	} else if (context->globals().find(value) != context->globals().end()) {
+		
+	}
+	else {
+		/* is not declared */
+		std::cerr << value << " is not declared" << std::endl;	
+	}
+	
 	return value;
 }
 
@@ -173,6 +209,12 @@ std::string StringLiteral::toStdString(){
 
 void StringLiteral::toPrettyCode(CodeString* context){
 	context->add(value);
+}
+
+std::string StringLiteral::generateCode(CodeContext *context){
+	std::string ret = context->new_temp();
+	context->buffer << ret << " = " << value << "\n";
+	return ret;
 }
 
 std::string PrimaryExpression::toStdString(){ 
@@ -293,6 +335,27 @@ void ArrayAccess::toPrettyCode(CodeString* context){
 	}
 }
 
+std::string ArrayAccess::generateCode(CodeContext* context){
+	/* TODO test and improve this */
+	std::string t1 = "";
+	std::string t2 = "";
+	std::string result = "";
+	
+	if(postfix_expression != NULL){
+		t1 = postfix_expression->generateCode(context);
+	}
+	
+	if(expression.size() != 0){
+		for( auto &i : expression){
+			t2 = i->generateCode(context);
+		}
+	}
+	
+	result = context->new_temp();
+	context->buffer << result << " = " << t1 << "[" << t2 << "]\n"; 
+	return result;
+}
+
 std::string FunctionCall::toStdString(){
   std::string result = "<FunctionCall>";
 
@@ -319,11 +382,13 @@ void FunctionCall::toPrettyCode(CodeString* context){
 	}
 
 	if(argument_expression_list.size() != 0){
-	  context->add("(");
-	  for( auto &i : argument_expression_list){
-		  i->toPrettyCode(context);
-	  }
-	  context->add(")");
+		context->add("(");
+		int size = argument_expression_list.size();
+		for( auto &i : argument_expression_list){
+			i->toPrettyCode(context);
+			context->add(--size == 0 ? "":", ");
+		}
+		context->add(")");
 	}
 	else {
 		context->add("()");
@@ -332,24 +397,25 @@ void FunctionCall::toPrettyCode(CodeString* context){
 
 std::string FunctionCall::generateCode(CodeContext* context){
 	std::string result = "";
+	std::string tmp = "";
 
 	std::vector<std::string> params;
 	
 	if(argument_expression_list.size() != 0){
 		
 		for( auto &i : argument_expression_list){
-	  		params.push_back(i->generateCode(context));
+			params.insert(params.begin(),i->generateCode(context));
 		}
 	}
 	
 	if(postifx_expression != NULL){
-		result = postifx_expression->generateCode(context);
-		
 		for( std::string a : params){
 	  		context->buffer << "PushParam " << a << "\n";
 		}
 		
-		context->buffer << "LCall " << result << "\n";
+		tmp = postifx_expression->generateCode(context);
+		result = context->new_temp();
+		context->buffer << result << " = " << " LCall " << tmp << "\n";
 		context->buffer << "PopParams\n";
 	}
 
@@ -487,10 +553,10 @@ std::string LogicalOperation::generateCode(CodeContext* context){
 	context->buffer << "if( " << left << " " + op + " " << right << " ) goto "<< L1 << "\n";
 	context->buffer << "goto " << L2 << "\n";
 	context->buffer << L1 << ":\n";
-	context->buffer << " " << tmp << " = " << 1 << "\n";
-	context->buffer << " " << "goto " << L3 << "\n";
+	context->buffer << tmp << " = " << 1 << "\n";
+	context->buffer << "goto " << L3 << "\n";
 	context->buffer << L2 << ":\n";
-	context->buffer << " " << tmp << " = " << 0 << "\n";
+	context->buffer << tmp << " = " << 0 << "\n";
 	context->buffer << L3 << ":\n";
 	
     return tmp;
@@ -541,40 +607,36 @@ void ConditionalExpression::toPrettyCode(CodeString* context){
 }
 
 std::string ConditionalExpression::generateCode(CodeContext* context){
-    std::string result = "";
-	std::string temp1 = "";
-	std::string temp2 = "";
-	std::string temp3 = "";
-
-    if(logical_or_expression != NULL){
-        temp1 = logical_or_expression->generateCode(context);
-    }
-
-    if(expression.size() != 0){
-        for( auto &i : expression ) {
-            temp2 = i->generateCode(context);
-        }
-    }
-
-    if(conditional_expression != NULL){
-        temp3 = conditional_expression->generateCode(context);
+	std::string t1 = "";
+	std::string t2 = "";
+	std::string t3 = "";
+	std::string result = "";
+	std::string LFalse = "";
+	std::string LEnd = "";
+	
+	if(logical_or_expression != NULL){
+        t1 = logical_or_expression->generateCode(context);
     }
 	
 	result = context->new_temp();
-	std::string L1 = context->new_label();
-	std::string L2 = context->new_label();
-	std::string L3 = context->new_label();
-	
-	context->buffer << "if( " << temp1 << " == 1 ) goto "<< L1 << "\n";
-	context->buffer << "goto " << L2 << "\n";
-	context->buffer << L1 << ":\n";
-	context->buffer << " " << result << " = " << temp2 << "\n";
-	context->buffer << " " << "goto " << L3 << "\n";
-	context->buffer << L2 << ":\n";
-	context->buffer << " " << result << " = " << temp3 << "\n";
-	context->buffer << L3 << ":\n";
-	
-    return result;
+	LFalse = context->new_label();
+	context->buffer << "if " << t1 << " == 0 goto " << LFalse << "\n";
+	if(expression.size() != 0){
+        for( auto &i : expression ) {
+            t2 = i->generateCode(context);
+        }
+	}
+	context->buffer << result << " = " << t2 <<  "\n";
+	LEnd = context->new_label();
+	context->buffer << "goto " << LEnd << "\n";
+	context->buffer << LFalse << ":\n";
+	if(conditional_expression != NULL){
+        t3 = conditional_expression->generateCode(context);
+    }
+	context->buffer << result << " = " << t3 <<  "\n";
+	context->buffer << "goto " << LEnd << "\n";
+	context->buffer << LEnd << ":\n";
+	return result;
 }
 
 std::string AssignmentExpression::toStdString(){
@@ -664,6 +726,20 @@ void ArrayDeclarator::toPrettyCode(CodeString* context){
 	context->add("]");
 }
 
+std::string ArrayDeclarator::generateCode(CodeContext* context){
+	std::string result = "";
+	
+	if(direct_declarator != NULL){
+		result = direct_declarator->generateCode(context);	
+	}
+	
+	if(constant_expression != NULL){
+		//constant_expression->generateCode(context);	
+	}
+	
+	return result;
+}
+
 std::string FunctionDeclarator::toStdString(){
 	std::string result = "<FunctionDeclarator>";
 	
@@ -722,6 +798,15 @@ std::string FunctionDeclarator::generateCode(CodeContext* context){
 	if(direct_declarator != NULL){
 		result = direct_declarator->generateCode(context);	
 	}
+	
+	context->push_block();
+	
+	if(parameter_type_list.size() != 0){
+		parameter_type_list.size();
+		for ( auto &i : parameter_type_list) {
+			i->generateCode(context);
+		}
+	}
 		
 	return result;
 }
@@ -745,6 +830,16 @@ void NestedDeclarator::toPrettyCode(CodeString* context){
 	}
 	
 	context->add(")");
+}
+
+std::string NestedDeclarator::generateCode(CodeContext* context){
+	std::string result = "";
+	
+	if(declarator != NULL){
+		result = declarator->generateCode(context);	
+	}
+	
+	return result;
 }
 
 std::string Pointer::toStdString(){
@@ -783,6 +878,22 @@ void Pointer::toPrettyCode(CodeString* context){
 		}
 	}
 	
+}
+
+std::string Pointer::generateCode(CodeContext* context){
+	std::string result = "*";
+	
+	if(child){
+		result += child->generateCode(context);
+	}
+	
+	/** Get specifiers childs std strings */
+	//if(type_qualifier_list.size() != 0){
+	//	for ( auto &i : type_qualifier_list) {
+	//		i->toPrettyCode(context);
+	//	}
+	//}
+	return result;
 }
 
 std::string InitDeclarator::toStdString(){
@@ -965,6 +1076,16 @@ void ParameterDeclaration::toPrettyCode(CodeString* context){
 	}
 }
 
+std::string ParameterDeclaration::generateCode(CodeContext* context){
+	std::string result = "";
+	
+	if(declarator != NULL){
+		result = declarator->generateCode(context);
+	}
+	
+	return result;
+}
+
 std::string CaseStatement::toStdString(){
 	std::string result = "<CaseStatement>";
 	
@@ -996,6 +1117,12 @@ void CaseStatement::toPrettyCode(CodeString* context){
 	}
 }
 
+std::string CaseStatement::generateCode(CodeContext* context){
+	std::string result = "";
+	/* TODO: implement this */
+	return result;
+}
+
 std::string DefaultStatement::toStdString(){
 	std::string result = "<DefaultStatement>";
 	
@@ -1016,12 +1143,16 @@ void DefaultStatement::toPrettyCode(CodeString* context){
 	}
 }
 
+std::string DefaultStatement::generateCode(CodeContext* context){
+	return ""; /* TODO: implement this */
+}
+
 std::string TaggedStatement::toStdString(){
 	std::string result = "<TaggedStatement>";
 	
-	if(identifier_declarator != NULL){
-		result += identifier_declarator->toStdString();
-	}
+	//if(identifier != NULL){
+	//	result += identifier->toStdString();
+	//}
 	
 	if(statement != NULL){
 		result += statement->toStdString();
@@ -1034,17 +1165,25 @@ std::string TaggedStatement::toStdString(){
 void TaggedStatement::toPrettyCode(CodeString* context){
 	CodeLine* line = new CodeLine();
 	
-	
-	if(identifier_declarator != NULL){
-		identifier_declarator->toPrettyCode(line);
-		line->add(":");
-	}
+	line->add(identifier + ":");
 	
 	context->add(line);
 	
 	if(statement != NULL){
 		statement->toPrettyCode(context);
 	}
+}
+
+std::string TaggedStatement::generateCode(CodeContext* context){
+	
+	context->buffer << identifier;
+	context->buffer << ":\n";
+	
+	if(statement != NULL){
+		statement->generateCode(context);
+	}
+	
+	return "";
 }
 
 std::string CompoundStatement::toStdString(){
@@ -1174,6 +1313,21 @@ void IfSelectionStatement::toPrettyCode(CodeString* context) {
 	statement->toPrettyCode(context);
 }
 
+std::string IfSelectionStatement::generateCode(CodeContext* context) {
+	std::string t1 = "";
+	std::string LEnd = "";
+	
+	for( auto &i : expression){
+		t1 = i->generateCode(context);
+	}
+	
+	LEnd = context->new_label();
+	context->buffer << "if " << t1 << " == 0 goto " << LEnd << "\n";
+	statement->generateCode(context);
+	context->buffer << LEnd << ":\n";
+	return "";
+}
+
 std::string IfElseSelectionStatement::toStdString() {
 	std::string result = "<IfElseSelectionStatement>";
 
@@ -1202,6 +1356,26 @@ void IfElseSelectionStatement::toPrettyCode(CodeString* context) {
 	statement_else->toPrettyCode(context);
 }
 
+std::string IfElseSelectionStatement::generateCode(CodeContext* context) {
+	std::string t1 = "";
+	std::string LFalse = "";
+	std::string LEnd = "";
+	
+	for( auto &i : expression){
+		t1 = i->generateCode(context);
+	}
+	
+	LFalse = context->new_label();
+	LEnd = context->new_label();
+	context->buffer << "if " << t1 << " == 0 goto " << LFalse << "\n";
+	statement->generateCode(context);
+	context->buffer << "goto " << LEnd << "\n";
+	context->buffer << LFalse << ":\n";
+	statement_else->generateCode(context);
+	context->buffer << LEnd << ":\n";
+	return "";
+}
+
 std::string SwitchSelectionStatement::toStdString() {
 	std::string result = "<SwitchSelectionStatement>";
 
@@ -1225,6 +1399,11 @@ void SwitchSelectionStatement::toPrettyCode(CodeString* context) {
 	line->add(")");
 	context->add(line);
 	statement->toPrettyCode(context);
+}
+
+std::string SwitchSelectionStatement::generateCode(CodeContext* context) {
+	/* TODO implement this*/
+	return "";
 }
 
 std::string WhileIterationStatement::toStdString() {
@@ -1251,6 +1430,26 @@ void WhileIterationStatement::toPrettyCode(CodeString* context) {
 	line->add(")");
 	context->add(line);
 	statement->toPrettyCode(context);
+}
+
+std::string WhileIterationStatement::generateCode(CodeContext *context){
+	std::string t1 = "";
+	std::string LBegin = "";
+	std::string LEnd = "";
+	
+	LBegin = context->new_label();
+	LEnd = context->new_label();
+	
+	context->buffer << LBegin << ":\n";
+	for( auto &i : expression){
+		t1 = i->generateCode(context);
+	}
+	
+	context->buffer << "if " << t1 << " == 0 goto " << LEnd << "\n";
+	statement->generateCode(context);
+	context->buffer << "goto " << LBegin << "\n";
+	context->buffer << LEnd << ":\n";
+	return "";
 }
 
 std::string DoWhileIterationStatement::toStdString() {
@@ -1280,6 +1479,23 @@ void DoWhileIterationStatement::toPrettyCode(CodeString* context) {
 	context->add(line);
 }
 
+std::string DoWhileIterationStatement::generateCode(CodeContext* context){
+	std::string t1 = "";
+	std::string LBegin = "";
+	
+	LBegin = context->new_label();
+	
+	context->buffer << LBegin << ":\n";
+	statement->generateCode(context);
+	
+	for( auto &i : expression){
+		t1 = i->generateCode(context);
+	}
+	
+	context->buffer << "if " << t1 << " == 1 goto " << LBegin << "\n";
+	return "";
+}
+
 std::string ForSimpleIterationStatement::toStdString() {
 	std::string result = "<ForSimpleIterationStatement>";
 
@@ -1292,7 +1508,7 @@ std::string ForSimpleIterationStatement::toStdString() {
 }
 
 void ForSimpleIterationStatement::toPrettyCode(CodeString* context) {
-	CodeLine* line = new CodeLine("for (");
+	CodeLine* line = new CodeLine("for ( ");
 
 	expression_statement1->toPrettyCode(line);
 	line->add(" ");
@@ -1300,6 +1516,33 @@ void ForSimpleIterationStatement::toPrettyCode(CodeString* context) {
 	line->add(" )");
 	context->add(line);
 	statement->toPrettyCode(context);
+}
+
+std::string ForSimpleIterationStatement::generateCode(CodeContext* context) {
+	std::string L1 = "";
+	std::string L2 = "";
+	std::string L3 = "";
+	std::string L4 = "";
+	std::string t1 = "";
+	
+	expression_statement1->generateCode(context);
+	
+	L1 = context->new_label();
+	L2 = context->new_label();
+	L3 = context->new_label();
+	L4 = context->new_label();
+	
+	context->buffer << L1 << ":\n";
+	t1 = expression_statement2->generateCode(context);
+	context->buffer << "if " << t1 << " == 1 goto " << L2 << "\n";
+	context->buffer << "goto " << L3 << "\n";
+	context->buffer << L4 << ":\n";
+	context->buffer << "goto " << L1 << "\n";
+	context->buffer << L2 << ":\n";
+	statement->generateCode(context);
+	context->buffer << "goto " << L4 << "\n";
+	context->buffer << L3 << ":\n";
+	return "";
 }
 
 std::string ForCompoundIterationStatement::toStdString() {
@@ -1320,19 +1563,49 @@ std::string ForCompoundIterationStatement::toStdString() {
 }
 
 void ForCompoundIterationStatement::toPrettyCode(CodeString* context) {
-	CodeLine* line = new CodeLine("for (");
+	CodeLine* line = new CodeLine("for ( ");
 
 	expression_statement1->toPrettyCode(line);
 	line->add(" ");
 	expression_statement2->toPrettyCode(line);
+	line->add(" ");
 	for(auto &i : expression){
 		i->toPrettyCode(line);
 	}
-	
 	line->add(" )");
 	context->add(line);
 	statement->toPrettyCode(context);
 
+}
+
+std::string ForCompoundIterationStatement::generateCode(CodeContext* context) {
+	std::string L1 = "";
+	std::string L2 = "";
+	std::string L3 = "";
+	std::string L4 = "";
+	std::string t1 = "";
+	
+	expression_statement1->generateCode(context);
+	
+	L1 = context->new_label();
+	L2 = context->new_label();
+	L3 = context->new_label();
+	L4 = context->new_label();
+	
+	context->buffer << L1 << ":\n";
+	t1 = expression_statement2->generateCode(context);
+	context->buffer << "if " << t1 << " == 1 goto " << L2 << "\n";
+	context->buffer << "goto " << L3 << "\n";
+	context->buffer << L4 << ":\n";
+	for(auto &i : expression){
+		i->generateCode(context);
+	}
+	context->buffer << "goto " << L1 << "\n";
+	context->buffer << L2 << ":\n";
+	statement->generateCode(context);
+	context->buffer << "goto " << L4 << "\n";
+	context->buffer << L3 << ":\n";
+	return "";
 }
 
 std::string JumpStatement::toStdString(){
@@ -1379,6 +1652,38 @@ void JumpStatement::toPrettyCode(CodeString* context){
 	}
 	
 	context->add(line);
+}
+
+std::string JumpStatement::generateCode(CodeContext* context){
+
+	if(token == GOTO){
+		context->buffer << "goto " << identifier << "\n" ;
+	}
+	
+	if(token == CONTINUE){
+		/* TODO implement this */
+	}
+	
+	if(token == BREAK){
+		/* TODO implement this */
+	}
+	
+	if(token == RETURN && expression_list.size() == 0){
+		context->buffer << "return\n";
+	}
+	
+	if(token == RETURN && expression_list.size() != 0){
+		std::string tmp = "";
+		if(expression_list.size() != 0){
+			for(auto &i : expression_list){
+				tmp = i->generateCode(context);
+			}
+		}
+		
+		context->buffer << "return " << tmp << "\n";
+	}
+	
+	return "";
 }
 
 std::string FunctionDefinition::toStdString(){
@@ -1460,6 +1765,8 @@ std::string FunctionDefinition::generateCode(CodeContext* context){
 	}
 	
 	context->buffer << "EndFunc\n\n";
+	
+	context->pop_block();
 	
 	return result;
 }

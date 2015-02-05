@@ -401,7 +401,7 @@ parameter_type_list
 	: parameter_list 				{ $$ = $1; }
 	| parameter_list ',' ELLIPSIS 	/** not implemented */
 	;
-
+	
 parameter_list
 	: parameter_declaration 					{ $$ = new ParameterDeclarationList(); $$->push_back($1); }
 	| parameter_list ',' parameter_declaration 	{ $1->push_back($3); $$ = $1; }
@@ -456,7 +456,7 @@ initializer_list
 	;
 
 statement
-	: labeled_statement 	/** @returns LabeledStatement */
+	: labeled_statement 	{ $$ = $1; }
 	| compound_statement	{ $$ = $1; }
 	| expression_statement	{ $$ = $1; }
 	| selection_statement	{ $$ = $1; }
@@ -465,7 +465,7 @@ statement
 	;
 
 labeled_statement
-	: IDENTIFIER ':' statement					{ $$ = new TaggedStatement(new IdentifierDeclarator(*$1),$3); }
+	: IDENTIFIER ':' statement					{ $$ = new TaggedStatement(*$1,$3); }
 	| CASE constant_expression ':' statement	{ $$ = new CaseStatement($2,$4); }
 	| DEFAULT ':' statement						{ $$ = new DefaultStatement($3); }
 	;

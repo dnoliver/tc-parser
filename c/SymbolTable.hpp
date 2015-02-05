@@ -2,6 +2,7 @@
 #define SYMBOL_TABLE_HPP
 
 #include <iostream>
+#include <map>
 
 class Symbol {
 	public: 
@@ -18,21 +19,13 @@ class Symbol {
 typedef std::map<std::string,Symbol*> SymbolMap;
 
 class SymbolTable {
-	private:
-		static bool initialized;
-		static SymbolTable *instance;
-		SymbolMap symbols;
-		
-		SymbolTable(){}
+		int context_index;
 	public:
-		~SymbolTable(){
-			initialized = false;
-		}
+		SymbolMap locals;
+		SymbolTable(){}
+		SymbolTable(int context_index) : context_index(context_index) {}
+		~SymbolTable(){}
 	
-		static SymbolTable *Instance();
-		void insert(std::string);
-		bool has(std::string);
-		void invoque(std::string);
 		std::string toStdString();
 };
 
