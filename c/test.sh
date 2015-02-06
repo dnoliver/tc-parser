@@ -90,7 +90,7 @@ assert "int a = 1 \* 2 + 1 \* 3 - 5;"
 
 ## logical operation
 assert "int a = 4 > 20;"
-assert "int x=1<10 && 10==10;";
+assert "int x=1<10 && 10==10;"
 
 ## unary operation
 assert "int x = 0; int a = x++;"

@@ -147,7 +147,7 @@ std::string Identifier::generateCode(CodeContext* context){
 	if (context->locals().find(value) != context->locals().end()) {
 		context->locals().find(value)->second->invoque();
 	} else if (context->globals().find(value) != context->globals().end()) {
-		
+		context->globals().find(value)->second->invoque();
 	}
 	else {
 		/* is not declared */
