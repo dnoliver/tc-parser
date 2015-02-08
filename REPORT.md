@@ -1,10 +1,5 @@
 #INFORME
 
-Se entregará al profesor un informe escrito (en versión digital formato PDF) donde se debe describir la 
-problemática abordada en el trabajo final, el desarrollo de la solución propuesta y una conclusión. 
-El texto deberá ser conciso y con descripciones apropiadas. 
-No se debe incluir el código fuente, sino los textos necesarios para realizar las explicaciones pertinentes.
-
 ##PROBLEMATICA ABORDADA
 
 Aplicacion practica de los contenidos teoricos adquiridos durante el cursado de la asignatura 
@@ -277,7 +272,28 @@ EndFunc
 
 ##CONCLUSION
 
+Como resultado de la construccion de un pequeño compilador de codigo C, y la implementacion de las diferentes 
+fases de compilacion, tenemos las siguientes conclusiones:
 
+* Es fundamental un buen el diseño y comprension de la gramatica del lenguaje, asi como el conocimiento de las
+ventajas que provee la utilizacion de Bison para la creacion de el parser. Dado que un error en la definicion 
+de la gramatica puede causar la necesidad de reimplementar gran parte del software, ademas, el desconocimiento de
+las capacidades provistas por Bison hace que se planteen soluciones alternativas y se desaproveche el poder de la
+herramienta. 
+
+* El diseño orientado a objetos, patrones de diseño, y soluciones conocidas a los problemas de implementacion 
+de un compilador agilizan la construccion del mismo. Ademas, permiten que la extension y evolucion del compilador 
+se haga de una forma mas ordenada e uniforme. Como contraposicion, la gran cantidad de clases que implementamos 
+para soportar el Arbol Sintactico Abstracto, hace que un pequeño cambio en la definicion de un metodo que debe ser
+implementado por todos los nodos, deba ser propagado por toda la jerarquia de clases.
+
+* Dado el desconocimiento de los desarrolladores, la implementacion de codigo de tres direcciones fue una area
+dificil. Durante el periodo de investigacion, no encontramos una descripcion de como implementar codigo de 
+tres direccion que se ajuste a nuestras necesidades. Las soluciones encotradas se pueden clasificar en dos grupos:
+soluciones simplistas, aplicables solo a algunos casos de ejemplo, y soluciones complejas, como GENERIC o GIMPLE,
+implementadas por GNU. A causa de ello, la implementacion realiza fue construida a partir de varias referencias.
+Un ejemplo claro de esta situacion es la implementacion del codigo de tres direcciones para el operador ternario
+`A? B : C;`, para la cual no se encontro ninguna solucion propuesta, y se hizo una implementacion propia.
 
 [scanner-file]: /source/ansi-c.l  "Scanner definition"
 [parser-file]: /source/ansi-c.y  "Parser definition"
