@@ -293,7 +293,7 @@ herramienta.
 
 * El diseño orientado a objetos, patrones de diseño, y soluciones conocidas a los problemas de implementacion 
 de un compilador agilizan la construccion del mismo. Ademas, permiten que la extension y evolucion del compilador 
-se haga de una forma mas ordenada e uniforme. Como contraposicion, la gran cantidad de clases que implementamos 
+se haga de una forma mas ordenada y uniforme. Como contraposicion, la gran cantidad de clases que implementamos 
 para soportar el Arbol Sintactico Abstracto, hace que un pequeño cambio en la definicion de un metodo que debe ser
 implementado por todos los nodos, deba ser propagado por toda la jerarquia de clases.
 
