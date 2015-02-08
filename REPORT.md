@@ -129,6 +129,12 @@ En la fase de analisis semantico, se implementaron las siguientes validaciones:
 * verificacion de la estructura de la operaciones aritmeticas y logicas
 * verificacion de variables declaradas mas de una vez en un mismo contexto
 
+###Jerarquia de classes
+
+![](/media/)
+![](/media/)
+![](/media/)
+
 ###Generacion de codigo
 
 Para la fase de generacion de codigo, se implementa la construccion de 3 artefactos:
@@ -297,3 +303,7 @@ Un ejemplo claro de esta situacion es la implementacion del codigo de tres direc
 
 [scanner-file]: /source/ansi-c.l  "Scanner definition"
 [parser-file]: /source/ansi-c.y  "Parser definition"
+[statement-uml]: /media/Statement.png
+[expression-uml]: /media/Expression.png
+[controls-uml]: /media/ControlStatements.png
+[declaration-uml]: /media/Declaration.png
