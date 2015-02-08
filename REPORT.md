@@ -131,9 +131,13 @@ En la fase de analisis semantico, se implementaron las siguientes validaciones:
 
 ###Jerarquia de classes
 
-![](/media/)
-![](/media/)
-![](/media/)
+!["UML Diagram"][statement-uml]
+
+!["UML Diagram"][declaration-uml]
+
+!["UML Diagram"][controls-uml]
+
+!["UML Diagram"][expression-uml]
 
 ###Generacion de codigo
 
@@ -303,7 +307,7 @@ Un ejemplo claro de esta situacion es la implementacion del codigo de tres direc
 
 [scanner-file]: /source/ansi-c.l  "Scanner definition"
 [parser-file]: /source/ansi-c.y  "Parser definition"
-[statement-uml]: /media/Statement.png
-[expression-uml]: /media/Expression.png
-[controls-uml]: /media/ControlStatements.png
-[declaration-uml]: /media/Declaration.png
+[statement-uml]: /media/Statement.png "Statement"
+[expression-uml]: /media/Expression.png "Expression"
+[controls-uml]: /media/ControlStatements.png "Controls Statements"
+[declaration-uml]: /media/Declaration.png "Declaration Statements"
