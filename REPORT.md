@@ -168,7 +168,7 @@ function doNodeOperation(context) {
 
 Para la generacion de la tabla de simbolos, se tiene en cuenta los distintos contextos de ejecuccion. Existe un 
 contexto global del programa, y contextos locales a cada definicion de funciones. Las declaraciones de variables 
-o functiones se registran en la tabla de simbolos correspondiente al contexto actual de ejecucion. 
+o funciones se registran en la tabla de simbolos correspondiente al contexto actual de ejecucion. 
 
 Ademas, la tabla de simbolos de cada contexto almacena la cantidad de invocaciones realizadas sobre ese simbolo. 
 Para ello, primero se verifica si el simbolo existe en el contexto local o global, y se registra una invocacion 
@@ -242,7 +242,7 @@ Para la generacion de codigo de tres direcciones, se necesito implementar las si
 * generacion de variables temporales
 * generacion de etiquetas (labels)
 
-La estrategia utiliada es la misma descripta anteriormente: el arbol AST se recorre desde el nodo raiz, y cada 
+La estrategia utilizada es la misma descripta anteriormente: el arbol AST se recorre desde el nodo raiz, y cada 
 nodo del arbol es responsable de generar codigo de tres dirrecciones propio y de sus nodos hijos. 
 Vemos un ejemplo de generacion de codigo de tres direcciones, a continuacion:
 
