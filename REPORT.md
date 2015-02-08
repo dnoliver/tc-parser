@@ -279,5 +279,5 @@ EndFunc
 
 
 
-[scanner-file]: /c/ansi-c.l  "Scanner definition"
-[parser-file]: /c/ansi-c.y  "Parser definition"
+[scanner-file]: /source/ansi-c.l  "Scanner definition"
+[parser-file]: /source/ansi-c.y  "Parser definition"
