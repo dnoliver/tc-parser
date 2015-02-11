@@ -56,8 +56,7 @@ se ejecuta el código C correspondiente.
 
 [SourceForge:Flex] (http://flex.sourceforge.net/)
 
-La descripcion del escaner se encuentra en el archivo [/c/ansi-c.l] [scanner-file], el cual se implemento a partir
-de una solucion propuesta por Jutta Degener, disponible en  [http://www.lysator.liu.se/c/ANSI-C-grammar-l.html](http://www.lysator.liu.se/c/ANSI-C-grammar-l.html).
+La descripcion del escaner se encuentra en el archivo [/source/ansi-c.l] [scanner-file], el cual se implemento a partir de una solucion propuesta por Jutta Degener, disponible en [http://www.lysator.liu.se/c/ANSI-C-grammar-l.html](http://www.lysator.liu.se/c/ANSI-C-grammar-l.html).
 
 ###Analisis Sintactico
 
@@ -84,8 +83,7 @@ en un parser LR generalizado (GLR), empleando tablas LALR(1).
 
 [GNU Software:Bison](http://www.gnu.org/software/bison/)
 
-La descripcion del escaner se encuentra en el archivo [/c/ansi-c.y] [parser-file], el cual se implemento a partir
-de una solucion propuesta por Jutta Degener, disponible en  [http://www.lysator.liu.se/c/ANSI-C-grammar-y.html](http://www.lysator.liu.se/c/ANSI-C-grammar-y.html).
+La descripcion del escaner se encuentra en el archivo [/source/ansi-c.y] [parser-file], el cual se implemento a partir de una solucion propuesta por Jutta Degener, disponible en  [http://www.lysator.liu.se/c/ANSI-C-grammar-y.html](http://www.lysator.liu.se/c/ANSI-C-grammar-y.html).
 
 En este punto, el programa procesado es almacenado en un [Arbol Sintactico Abstracto](http://es.wikipedia.org/wiki/%C3%81rbol_de_sintaxis_abstracta),
 el cual se utiliza para las etapas de compilacion posteriores. Para la construccion del AST, se diseño una 
@@ -116,10 +114,7 @@ int x;
 
 ###Analisis Semantico
 
-El análisis semántico es la tarea de asegurar
-que las declaraciones y sentencias de un
-programa son semánticamente correcta, es decir, que
-su significado es claro y consistente con la definicion del lenguaje.
+El análisis semántico es la tarea de asegurar que las declaraciones y sentencias de un programa son semánticamente correcta, es decir, que su significado es claro y consistente con la definicion del lenguaje.
 
 [PDF:Compilers Construction](http://home.adelphi.edu/~siegfried/cs372/372l8.pdf)
 
@@ -147,8 +142,7 @@ Para la fase de generacion de codigo, se implementa la construccion de 3 artefac
 * codigo embellecido
 * codigo de tres direcciones
 
-La solucion implementada esta basada en un ejemplo disponible en  [http://gnuu.org/2009/09/18/writing-your-own-toy-compiler](http://gnuu.org/2009/09/18/writing-your-own-toy-compiler),
-el cual implementa un pequeño compilador y generacion de codigo para Low Level Virtual Machine (LLVM).
+La solucion implementada esta basada en un ejemplo disponible en  [http://gnuu.org/2009/09/18/writing-your-own-toy-compiler](http://gnuu.org/2009/09/18/writing-your-own-toy-compiler), el cual implementa un pequeño compilador y generacion de codigo para Low Level Virtual Machine (LLVM).
 Por ello, la generacion de cualquiera de los artefactos se realiza mediante el recorrido del AST, ejectuando 
 la operacion correspondiente en cada uno de los nodos del arbol.
 
